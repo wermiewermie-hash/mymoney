@@ -5,6 +5,10 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { uploadProfilePhoto } from '@/app/actions/profile'
+import { ArrowLeft } from 'lucide-react'
+import PageHeader, { HeaderButton } from '@/components/PageHeader'
+import { pageStyles } from '@/lib/constants/pageStyles'
+import Card from '@/components/Card'
 
 interface Profile {
   id: string
@@ -162,24 +166,21 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
-      <div className="px-6 pt-8 pb-0">
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={handleBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-white text-2xl [text-shadow:rgba(0,0,0,0.1)_0px_4px_6px]">Settings</h1>
-          <div className="w-9" /> {/* Spacer */}
-        </div>
+      <div className="px-6 pt-7 pb-0">
+        <PageHeader
+          title="Settings"
+          buttonColor={pageStyles.settings.buttonColor}
+          leftAction={
+            <HeaderButton onClick={handleBack} color={pageStyles.settings.buttonColor}>
+              <ArrowLeft className="h-5 w-5" />
+            </HeaderButton>
+          }
+        />
       </div>
 
       {/* Settings Form */}
       <div className="px-6 space-y-4">
-        <div className="kids-card space-y-6">
+        <Card className="space-y-6">
           {/* Profile Photo */}
           <div className="flex flex-col items-center">
             <input
@@ -329,10 +330,10 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
               'Save Changes'
             )}
           </button>
-        </div>
+        </Card>
 
         {/* Delete Account */}
-        <div className="kids-card bg-gradient-to-br from-white to-[#FFEBEE]">
+        <Card className="bg-gradient-to-br from-white to-[#FFEBEE]">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full flex items-center justify-center shadow-lg">
               <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +351,7 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
           >
             Delete Account
           </button>
-        </div>
+        </Card>
       </div>
 
       {/* Delete Confirmation Modal */}

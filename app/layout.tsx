@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree } from "next/font/google";
+import { Figtree, Lora } from "next/font/google";
 import "./globals.css";
 import { CurrencyProvider } from "@/lib/context/CurrencyContext";
 
@@ -7,6 +7,12 @@ const figtree = Figtree({
   variable: "--font-figtree",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
+});
+
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${figtree.variable} antialiased`}
+        className={`${figtree.variable} ${lora.variable} antialiased`}
       >
         <CurrencyProvider>
           {children}

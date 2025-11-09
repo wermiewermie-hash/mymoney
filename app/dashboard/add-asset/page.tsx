@@ -1,18 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createAsset } from '@/app/actions/assets'
-import { searchStocks, getStockPrice, type StockSearchResult } from '@/app/actions/stocks'
-import { getStockEmoji } from '@/lib/utils/stock-utils'
+import { getStockPrice } from '@/app/actions/stocks'
+import Card from '@/components/Card'
+import PageHeader, { HeaderButton } from '@/components/PageHeader'
+import { pageStyles } from '@/lib/constants/pageStyles'
+import { ArrowLeft } from 'lucide-react'
+import { useCurrency } from '@/lib/context/CurrencyContext'
+import { ConfettiEffect } from '@/components/ConfettiEffect'
 
 type AssetCategory = 'stocks' | 'cash' | 'debt' | null
 
 type Stock = {
   name: string
   ticker: string
-  emoji: string
   type: string
 }
 
@@ -23,6 +27,9 @@ const SVG_PATHS = {
 
 export default function AddAssetPage() {
   const router = useRouter()
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const returnUrl = searchParams.get('returnUrl') || '/dashboard/accounts'
+  const { exchangeRate } = useCurrency()
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedCategory, setSelectedCategory] = useState<AssetCategory>(null)
@@ -30,6 +37,8 @@ export default function AddAssetPage() {
   const [stockPrice, setStockPrice] = useState<number>(0)
   const [shares, setShares] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Cash/Debt specific state
   const [accountName, setAccountName] = useState('')
@@ -37,10 +46,10 @@ export default function AddAssetPage() {
   const [accountAmount, setAccountAmount] = useState('')
   const [accountCurrency, setAccountCurrency] = useState<'USD' | 'JPY'>('USD')
 
-  // Reset cash/debt form when category changes
+  // Update emoji when category changes
   useEffect(() => {
     if (selectedCategory === 'cash' || selectedCategory === 'debt') {
-      setAccountName('')
+      // Don't reset accountName - it was set in step 1
       setAccountEmoji(selectedCategory === 'cash' ? '💰' : '💸')
       setAccountAmount('')
       setAccountCurrency('USD')
@@ -48,33 +57,34 @@ export default function AddAssetPage() {
   }, [selectedCategory])
 
   const canProceed = () => {
-    if (currentStep === 1) return selectedCategory !== null
-    if (currentStep === 2) {
+    if (currentStep === 1) return accountName.trim() !== '' && accountEmoji !== ''
+    if (currentStep === 2) return selectedCategory !== null
+    if (currentStep === 3) {
       if (selectedCategory === 'stocks') {
         return selectedStock !== null
       } else {
-        // Cash or debt - check if name and amount are filled
-        return accountName.trim() !== '' && parseFloat(accountAmount) > 0
+        // Cash or debt - check if amount is filled
+        return parseFloat(accountAmount) > 0
       }
     }
-    if (currentStep === 3) return shares > 0
-    if (currentStep === 4) return selectedDate !== null
+    if (currentStep === 4) return shares > 0
+    if (currentStep === 5) return selectedDate !== null
     return false
   }
 
   const handleNext = async () => {
-    // For cash/debt, skip step 3 (shares) and go from step 2 to step 4
+    // For cash/debt, skip step 4 (shares) and go from step 3 to step 5
     if (selectedCategory === 'cash' || selectedCategory === 'debt') {
-      if (currentStep === 2) {
-        setCurrentStep(4) // Skip step 3 (shares)
-      } else if (currentStep < 4) {
+      if (currentStep === 3) {
+        setCurrentStep(5) // Skip step 4 (shares)
+      } else if (currentStep < 5) {
         setCurrentStep(currentStep + 1)
       } else {
         await handleSave()
       }
     } else {
-      // For stocks, we have 4 steps
-      if (currentStep < 4) {
+      // For stocks, we have 5 steps
+      if (currentStep < 5) {
         setCurrentStep(currentStep + 1)
       } else {
         await handleSave()
@@ -86,28 +96,28 @@ export default function AddAssetPage() {
     if (!selectedCategory || !selectedDate) return
 
     setLoading(true)
-    const USD_TO_JPY = 150
 
     const formData = new FormData()
 
     if (selectedCategory === 'stocks') {
       if (!selectedStock || !stockPrice) return
 
-      formData.append('name', selectedStock.name)
-      formData.append('type', selectedCategory)
+      formData.append('name', accountName)
+      formData.append('type', 'stock')
       formData.append('ticker', selectedStock.ticker)
       formData.append('shares', shares.toString())
       formData.append('pricePerShare', stockPrice.toString())
       formData.append('currentValue', (shares * stockPrice).toString())
       formData.append('acquisitionDate', selectedDate.toISOString())
+      formData.append('emoji', accountEmoji)
     } else {
       // Cash or Debt
       const amountUSD = accountCurrency === 'USD'
         ? parseFloat(accountAmount)
-        : parseFloat(accountAmount) / USD_TO_JPY
+        : parseFloat(accountAmount) / exchangeRate
 
       formData.append('name', accountName)
-      formData.append('type', selectedCategory === 'cash' ? 'bank_account' : 'debt')
+      formData.append('type', selectedCategory) // 'cash' or 'debt'
       formData.append('ticker', '') // No ticker for cash/debt
       formData.append('shares', '0')
       formData.append('pricePerShare', '0')
@@ -119,7 +129,8 @@ export default function AddAssetPage() {
     const result = await createAsset(formData)
 
     if (!result?.error) {
-      router.push('/dashboard/add-asset/success')
+      setLoading(false)
+      setShowConfetti(true)
     } else {
       setLoading(false)
       // Handle error
@@ -134,21 +145,6 @@ export default function AddAssetPage() {
       router.back()
     }
   }
-
-  const PageHeader = () => (
-    <div className="flex items-center justify-between mb-8">
-      <button
-        onClick={handleBack}
-        className="rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shrink-0 w-9 h-9 shadow-md flex items-center justify-center transition-opacity"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <h1 className="text-white text-2xl [text-shadow:rgba(0,0,0,0.1)_0px_4px_6px]">Add money</h1>
-      <div className="w-9" />
-    </div>
-  )
 
   // Step 4: Date Selection
   const DateStep = () => {
@@ -171,12 +167,11 @@ export default function AddAssetPage() {
     return (
       <>
         <div className="relative h-[193px] mb-8">
-          <div className="absolute bottom-0 h-[133px] left-0 rounded-[24px] w-full bg-gradient-to-b from-white to-[#FFF8E1]">
-            <div aria-hidden="true" className="absolute border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
             <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
-              When did you get it?
+              Date to start tracking
             </p>
-          </div>
+          </Card>
           <div className="absolute h-[116.088px] left-1/2 top-[0.99px] -translate-x-1/2 w-[256.857px]">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <img alt="" className="absolute h-[138.58%] left-[-0.11%] max-w-none top-[-17.67%] w-[100.21%]" src="/54306542bfc20377c281368aeba8dd257e39d540.png" />
@@ -184,7 +179,7 @@ export default function AddAssetPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-[24px] p-6 shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.1)]">
+        <Card>
           {/* Month/Year selector */}
           <div className="flex items-center justify-between mb-6">
             <button
@@ -266,12 +261,12 @@ export default function AddAssetPage() {
               <span className="text-[#8b7355] text-[11px]">Selected</span>
             </div>
           </div>
-        </div>
+        </Card>
       </>
     )
   }
 
-  // Step 1: Category Selection
+  // Step 2: Category Selection
   const CategoryStep = () => {
     const categories = [
       {
@@ -300,12 +295,11 @@ export default function AddAssetPage() {
     return (
       <>
         <div className="relative h-[193px] mb-8">
-          <div className="absolute bottom-0 h-[133px] left-0 rounded-[24px] w-full bg-gradient-to-b from-white to-[#FFF8E1]">
-            <div aria-hidden="true" className="absolute border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
             <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
               What are you adding?
             </p>
-          </div>
+          </Card>
           <div className="absolute h-[160px] left-1/2 top-[-20px] -translate-x-1/2 w-[176px]">
             <div className="absolute inset-0 overflow-visible pointer-events-none">
               <img alt="" className="absolute max-w-none w-full h-full object-contain" src="/e0bea88ac19658dbf72e7cc433401d42ef6ea838.png" />
@@ -368,21 +362,89 @@ export default function AddAssetPage() {
     }, 300)
   }
 
-  // Step 2: Cash/Debt Setup
+  // Step 1: Name and Emoji Selection
+  const NameEmojiStep = () => {
+    const allEmojiOptions = [
+      '💰', '🏦', '💵', '💳', '🪙', '💸', '💴', '💶', '💷', '💲',
+      '📈', '📊', '📉', '💹', '🎯', '🏆', '⭐', '✨', '🌟', '💎',
+      '🚀', '🎨', '🎮', '🏠', '🚗', '✈️', '🎓', '💼', '🛍️', '🎁'
+    ]
+
+    const suggestionPills = ['My account', 'Savings', 'Checking']
+
+    return (
+      <>
+        <div className="relative h-[193px] mb-8">
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
+            <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
+              Name your account
+            </p>
+          </Card>
+          <div className="absolute h-[140px] left-1/2 top-[-19px] -translate-x-1/2 w-[176px]">
+            <div className="absolute inset-0 overflow-visible pointer-events-none">
+              <img alt="" className="absolute max-w-none w-full h-full object-contain" src="/e0bea88ac19658dbf72e7cc433401d42ef6ea838.png" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Account Name */}
+          <Card>
+            <label className="block text-sm font-semibold text-[#5c4033] mb-3">Account Name</label>
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              autoFocus
+              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5c4033] placeholder-[#8B7355]"
+              placeholder="e.g., My savings"
+            />
+
+            {/* Suggestion Pills */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {suggestionPills.map((pill) => (
+                <button
+                  key={pill}
+                  onClick={() => setAccountName(pill)}
+                  className="px-4 py-2 bg-[rgba(255,201,7,0.2)] hover:bg-[rgba(255,201,7,0.3)] rounded-full text-sm text-[#5c4033] transition-colors"
+                >
+                  {pill}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* Emoji Picker */}
+          <Card>
+            <label className="block text-sm font-semibold text-[#5c4033] mb-3">Choose Icon</label>
+            <div className="grid grid-cols-5 gap-2">
+              {allEmojiOptions.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => setAccountEmoji(emoji)}
+                  className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
+                    accountEmoji === emoji
+                      ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
+                      : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </>
+    )
+  }
+
+  // Step 3: Cash/Debt Amount Setup
   const CashDebtStep = () => {
-    const USD_TO_JPY = 150
     const [amountInput, setAmountInput] = useState<string>('')
     const [isEditing, setIsEditing] = useState(false)
 
-    const emojiOptions = selectedCategory === 'cash'
-      ? ['💰', '🏦', '💵', '💳', '🪙', '💸', '💴', '💶', '💷', '💲']
-      : ['💸', '📉', '💔', '⚠️', '📊', '🏧', '💱', '📋', '🔻', '📛']
-
-    const suggestionPills = selectedCategory === 'cash'
-      ? ['Bank account', 'My cash', 'Savings']
-      : ['Borrowed money', 'Loan', 'Credit card']
-
-    // Sync amountInput with accountAmount
+    // Sync amountInput with accountAmount when not editing
     useEffect(() => {
       if (!isEditing) {
         if (accountCurrency === 'JPY') {
@@ -405,6 +467,11 @@ export default function AddAssetPage() {
       setAmountInput(value)
     }
 
+    const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsEditing(true)
+      handleInputFocus(e)
+    }
+
     const handleAmountBlur = () => {
       setIsEditing(false)
       const value = parseFloat(amountInput) || 0
@@ -414,13 +481,13 @@ export default function AddAssetPage() {
     const handleCurrencyChange = (newCurrency: 'USD' | 'JPY') => {
       const currentAmountUSD = accountCurrency === 'USD'
         ? parseFloat(accountAmount) || 0
-        : (parseFloat(accountAmount) || 0) / USD_TO_JPY
+        : (parseFloat(accountAmount) || 0) / exchangeRate
 
       setAccountCurrency(newCurrency)
       setIsEditing(false)
 
       if (newCurrency === 'JPY') {
-        const jpyAmount = currentAmountUSD * USD_TO_JPY
+        const jpyAmount = currentAmountUSD * exchangeRate
         setAccountAmount(Math.round(jpyAmount).toString())
       } else {
         setAccountAmount(currentAmountUSD.toFixed(2))
@@ -433,19 +500,18 @@ export default function AddAssetPage() {
 
     const formatDisplayValue = () => {
       const symbol = getCurrencySymbol()
-      if (!amountInput) return `${symbol}0`
+      if (!amountInput) return symbol
       return `${symbol}${amountInput}`
     }
 
     return (
       <>
         <div className="relative h-[193px] mb-8">
-          <div className="absolute bottom-0 h-[133px] left-0 rounded-[24px] w-full bg-gradient-to-b from-white to-[#FFF8E1]">
-            <div aria-hidden="true" className="absolute border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
             <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
               {selectedCategory === 'cash' ? 'Add your cash' : 'Money you owe'}
             </p>
-          </div>
+          </Card>
           <div className="absolute h-[100px] left-1/2 top-0 -translate-x-1/2 w-[100px]">
             <div className="w-[100px] h-[100px] bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] rounded-full flex items-center justify-center shadow-lg translate-y-[16px]">
               <span className="text-4xl">{selectedCategory === 'cash' ? '💰' : '💸'}</span>
@@ -454,52 +520,6 @@ export default function AddAssetPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Account Name */}
-          <div className="bg-white rounded-[24px] p-6 shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.1)]">
-            <label className="block text-sm font-semibold text-[#5c4033] mb-3">Account Name</label>
-            <input
-              type="text"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              onFocus={handleInputFocus}
-              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5c4033] placeholder-[#8B7355]"
-              placeholder="e.g., Bank account"
-            />
-
-            {/* Suggestion Pills */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {suggestionPills.map((pill) => (
-                <button
-                  key={pill}
-                  onClick={() => setAccountName(pill)}
-                  className="px-4 py-2 bg-[rgba(255,201,7,0.2)] hover:bg-[rgba(255,201,7,0.3)] rounded-full text-sm text-[#5c4033] transition-colors"
-                >
-                  {pill}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Emoji Picker */}
-          <div className="bg-white rounded-[24px] p-6 shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.1)]">
-            <label className="block text-sm font-semibold text-[#5c4033] mb-3">Choose Icon</label>
-            <div className="grid grid-cols-5 gap-2">
-              {emojiOptions.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => setAccountEmoji(emoji)}
-                  className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
-                    accountEmoji === emoji
-                      ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
-                      : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
-                  }`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Amount Input */}
           <div className="flex flex-col gap-3 items-center w-full">
             {/* Main card */}
@@ -508,10 +528,11 @@ export default function AddAssetPage() {
               <div className="flex items-center justify-center h-full">
                 <input
                   type="text"
-                  value={formatDisplayValue()}
+                  inputMode={accountCurrency === 'JPY' ? 'numeric' : 'decimal'}
+                  value={isEditing ? amountInput : formatDisplayValue()}
                   onChange={handleAmountChange}
                   onBlur={handleAmountBlur}
-                  onFocus={handleInputFocus}
+                  onFocus={handleAmountFocus}
                   onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                   className={`bg-transparent border-none outline-none min-w-[60px] text-[42px] text-center font-medium ${parseFloat(amountInput) > 0 ? 'text-[#5c4033]' : 'text-[#d4c4b0]'}`}
                   placeholder={`${getCurrencySymbol()}0`}
@@ -551,44 +572,15 @@ export default function AddAssetPage() {
     )
   }
 
-  // Step 2: Stock Selection
+  // Step 3: Stock Selection
   const StockStep = () => {
-    const [searchQuery, setSearchQuery] = useState('')
-    const [searchResults, setSearchResults] = useState<Stock[]>([])
-    const [isSearching, setIsSearching] = useState(false)
-
-    // Default stocks to show
+    // Pre-defined stocks to show (no search)
     const defaultStocks: Stock[] = [
-      { name: 'Alphabet', ticker: 'GOOGL', emoji: '💻', type: 'stock' },
-      { name: 'Total stock', ticker: 'VTI', emoji: '📊', type: 'etf' },
-      { name: 'S&P 500', ticker: 'VOO', emoji: '📊', type: 'etf' },
+      { name: 'Alphabet', ticker: 'GOOGL', type: 'stock' },
+      { name: 'Total stock', ticker: 'VTI', type: 'etf' },
+      { name: 'S&P 500', ticker: 'VOO', type: 'etf' },
+      { name: 'All country', ticker: 'VT', type: 'etf' },
     ]
-
-    // Perform search when query changes
-    useEffect(() => {
-      const performSearch = async () => {
-        if (searchQuery.trim().length === 0) {
-          setSearchResults([])
-          return
-        }
-
-        setIsSearching(true)
-        const results = await searchStocks(searchQuery)
-        const stocks: Stock[] = results.map(result => ({
-          name: result.name,
-          ticker: result.ticker,
-          emoji: getStockEmoji(result.ticker, result.type),
-          type: result.type
-        }))
-        setSearchResults(stocks)
-        setIsSearching(false)
-      }
-
-      const debounce = setTimeout(performSearch, 300)
-      return () => clearTimeout(debounce)
-    }, [searchQuery])
-
-    const displayStocks = searchQuery.trim().length === 0 ? defaultStocks : searchResults
 
     const handleStockSelect = async (stock: Stock) => {
       // Fetch the price for the selected stock first
@@ -603,12 +595,11 @@ export default function AddAssetPage() {
     return (
       <>
         <div className="relative h-[193px] mb-8">
-          <div className="absolute bottom-0 h-[133px] left-0 rounded-[24px] w-full bg-gradient-to-b from-white to-[#FFF8E1]">
-            <div aria-hidden="true" className="absolute border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
             <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
               Which stock is it?
             </p>
-          </div>
+          </Card>
           <div className="absolute h-[110px] left-1/2 top-0 -translate-x-1/2 w-[240px]">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <img alt="" className="absolute max-w-none w-full h-auto" src="/f32f28c3123af7b9aacf3b54f85a9b5ada274549.png" />
@@ -617,112 +608,83 @@ export default function AddAssetPage() {
         </div>
 
         <div className="space-y-4">
-          {/* Search bar first */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={handleInputFocus}
-              className="w-full h-13 bg-white rounded-[24px] px-12 py-3 text-[#5c4033] border border-[rgba(0,0,0,0.08)] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-[#FF9933]"
-            />
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              {isSearching ? (
-                <svg className="animate-spin h-5 w-5 text-[#8B7355]" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
-                  <circle cx="8.33" cy="8.33" r="5.83" stroke="#8B7355" strokeWidth="1.67" />
-                  <path d="M17.5 17.5L12.5 12.5" stroke="#8B7355" strokeLinecap="round" strokeWidth="1.67" />
-                </svg>
-              )}
-            </div>
-          </div>
-
-          {/* Search results */}
-          {searchQuery.trim().length > 0 && searchResults.length === 0 && !isSearching ? (
-            <div className="bg-white rounded-[24px] p-6 border border-[rgba(0,0,0,0.1)]">
-              <p className="text-[#8b7355] text-center">No results found for "{searchQuery}"</p>
-            </div>
-          ) : (
-            <>
-              {displayStocks.map((stock) => (
-                <motion.button
-                  key={stock.ticker}
-                  onClick={() => handleStockSelect(stock)}
-                  className="bg-white rounded-[24px] p-6 border border-[rgba(0,0,0,0.1)] w-full"
-                  animate={{
-                    scale: selectedStock?.ticker === stock.ticker ? 1.05 : 1,
-                    boxShadow: selectedStock?.ticker === stock.ticker
-                      ? '0px 12px 20px 0px rgba(0,0,0,0.25)'
-                      : '0px 8px 8px 0px rgba(0,0,0,0.14)'
-                  }}
-                  transition={{
-                    duration: 0.36,
-                    ease: [0.68, -0.15, 0.265, 1.15]
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-[28px]">{stock.emoji}</span>
-                    </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="text-[#5c4033] font-semibold">{stock.name}</h3>
-                      <p className="text-sm text-[#8b7355]">{stock.ticker}</p>
-                      <p className="text-xs text-[#8b7355] capitalize">{stock.type}</p>
-                    </div>
-                    <AnimatePresence>
-                      {selectedStock?.ticker === stock.ticker && (
-                        <motion.div
-                          layoutId="stock-checkmark"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="w-8 h-8 bg-[#52c41a] rounded-full flex items-center justify-center"
-                        >
-                          <span className="text-white text-lg">✓</span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.button>
-              ))}
-            </>
-          )}
+          {defaultStocks.map((stock) => (
+            <motion.button
+              key={stock.ticker}
+              onClick={() => handleStockSelect(stock)}
+              className="bg-white rounded-[24px] p-6 border border-[rgba(0,0,0,0.1)] w-full"
+              animate={{
+                scale: selectedStock?.ticker === stock.ticker ? 1.05 : 1,
+                boxShadow: selectedStock?.ticker === stock.ticker
+                  ? '0px 12px 20px 0px rgba(0,0,0,0.25)'
+                  : '0px 8px 8px 0px rgba(0,0,0,0.14)'
+              }}
+              transition={{
+                duration: 0.36,
+                ease: [0.68, -0.15, 0.265, 1.15]
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex-1 text-left">
+                  <h3 className="text-[#5c4033] font-semibold">{stock.name}</h3>
+                  <p className="text-sm text-[#8b7355]">{stock.ticker}</p>
+                  <p className="text-xs text-[#8b7355] capitalize">{stock.type}</p>
+                </div>
+                <AnimatePresence>
+                  {selectedStock?.ticker === stock.ticker && (
+                    <motion.div
+                      layoutId="stock-checkmark"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-8 h-8 bg-[#52c41a] rounded-full flex items-center justify-center"
+                    >
+                      <span className="text-white text-lg">✓</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.button>
+          ))}
         </div>
       </>
     )
   }
 
-  // Step 3: Amount Entry (Shares)
+  // Step 4: Amount Entry (Shares)
   const AmountStep = () => {
     const pricePerShare = stockPrice
     const [currency, setCurrency] = useState<'USD' | 'JPY'>('USD')
     const [amountInput, setAmountInput] = useState<string>('')
     const [isEditing, setIsEditing] = useState(false)
-    const USD_TO_JPY = 150
+    const [isEditingShares, setIsEditingShares] = useState(false)
+    const [sharesInput, setSharesInput] = useState<string>('')
 
     // Sync amountInput with shares
     useEffect(() => {
       if (!isEditing) {
         const baseAmount = shares * pricePerShare
         if (currency === 'JPY') {
-          const jpyAmount = Math.round(baseAmount * USD_TO_JPY)
+          const jpyAmount = Math.round(baseAmount * exchangeRate)
           setAmountInput(jpyAmount > 0 ? jpyAmount.toLocaleString('en-US') : '')
         } else {
           setAmountInput(baseAmount > 0 ? baseAmount.toFixed(2) : '')
         }
       }
-    }, [shares, currency, pricePerShare, isEditing])
+    }, [shares, currency, pricePerShare, isEditing, exchangeRate])
+
+    // Sync sharesInput with shares
+    useEffect(() => {
+      if (!isEditingShares) {
+        setSharesInput(shares > 0 ? shares.toString() : '')
+      }
+    }, [shares, isEditingShares])
 
     const updateAmountFromShares = (newShares: number) => {
       const baseAmount = newShares * pricePerShare
       if (currency === 'JPY') {
-        const jpyAmount = Math.round(baseAmount * USD_TO_JPY)
+        const jpyAmount = Math.round(baseAmount * exchangeRate)
         setAmountInput(jpyAmount > 0 ? jpyAmount.toLocaleString('en-US') : '')
       } else {
         setAmountInput(baseAmount > 0 ? baseAmount.toFixed(2) : '')
@@ -743,16 +705,41 @@ export default function AddAssetPage() {
       setIsEditing(false)
     }
 
+    const handleSharesInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setIsEditingShares(true)
+      const value = e.target.value.replace(/[^0-9.]/g, '')
+      // Allow only one decimal point and up to 1 decimal place
+      const parts = value.split('.')
+      if (parts.length > 2) return
+      if (parts[1] && parts[1].length > 1) return
+      setSharesInput(value)
+    }
+
+    const handleSharesBlur = () => {
+      setIsEditingShares(false)
+      const value = parseFloat(sharesInput) || 0
+      const roundedShares = Math.round(value * 10) / 10
+      setShares(roundedShares)
+      updateAmountFromShares(roundedShares)
+    }
+
+    const formatSharesDisplay = () => {
+      if (shares === Math.floor(shares)) {
+        return shares.toString()
+      }
+      return shares.toFixed(1)
+    }
+
     const handleCurrencyChange = (newCurrency: 'USD' | 'JPY') => {
       const currentAmountUSD = currency === 'USD'
         ? parseFloat(amountInput) || 0
-        : (parseFloat(amountInput.replace(/,/g, '')) || 0) / USD_TO_JPY
+        : (parseFloat(amountInput.replace(/,/g, '')) || 0) / exchangeRate
 
       setCurrency(newCurrency)
       setIsEditing(false)
 
       if (newCurrency === 'JPY') {
-        const jpyAmount = currentAmountUSD * USD_TO_JPY
+        const jpyAmount = currentAmountUSD * exchangeRate
         setAmountInput(Math.round(jpyAmount).toLocaleString('en-US'))
       } else {
         setAmountInput(currentAmountUSD.toFixed(2))
@@ -776,7 +763,7 @@ export default function AddAssetPage() {
 
       if (currency === 'JPY') {
         const jpyValue = parseFloat(amountInput.replace(/,/g, '')) || 0
-        const usdValue = jpyValue / USD_TO_JPY
+        const usdValue = jpyValue / exchangeRate
         const calculatedShares = usdValue / pricePerShare
         setShares(Math.round(calculatedShares * 10) / 10)
       } else {
@@ -799,25 +786,24 @@ export default function AddAssetPage() {
     return (
       <>
         <div className="relative h-[193px] mb-8">
-          <div className="absolute bottom-0 h-[133px] left-0 rounded-[24px] w-full bg-gradient-to-b from-white to-[#FFF8E1]">
-            <div aria-hidden="true" className="absolute border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+          <Card className="absolute bottom-0 h-[133px] left-0 w-full">
             <p className="absolute font-medium leading-[30px] left-1/2 text-[#5c4033] text-[20px] text-center top-[79px] tracking-[-0.4492px] -translate-x-1/2 w-[238px]">
               {selectedStock?.name}
             </p>
             <p className="absolute left-1/2 text-[#8b7355] text-xs text-center top-[105px] -translate-x-1/2">
-              ${Math.round(pricePerShare).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} per share
+              ${pricePerShare.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per share
             </p>
-          </div>
+          </Card>
           <div className="absolute h-[100px] left-1/2 top-0 -translate-x-1/2 w-[100px]">
             <div className="w-[100px] h-[100px] bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] rounded-full flex items-center justify-center shadow-lg translate-y-[16px]">
-              <span className="text-4xl">{selectedStock?.emoji}</span>
+              <span className="text-4xl">{accountEmoji}</span>
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Stepper */}
-          <div className="bg-white rounded-[24px] p-6 shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.1)]">
+          <Card>
             <div className="flex items-center justify-between">
               <button
                 onClick={handleDecrement}
@@ -833,7 +819,19 @@ export default function AddAssetPage() {
               </button>
 
               <div className="text-center">
-                <p className="text-[#5c4033] font-medium" style={{ fontSize: '42px', lineHeight: '1' }}>{shares.toLocaleString('en-US')}</p>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={isEditingShares ? sharesInput : formatSharesDisplay()}
+                  onChange={handleSharesInputChange}
+                  onBlur={handleSharesBlur}
+                  onFocus={(e) => {
+                    setIsEditingShares(true)
+                    setSharesInput(shares > 0 ? shares.toString() : '')
+                  }}
+                  className="text-[#5c4033] font-medium bg-transparent border-none outline-none text-center"
+                  style={{ fontSize: '42px', lineHeight: '1', width: '120px' }}
+                />
                 <p className="text-[#8b7355] text-sm mt-1">shares</p>
               </div>
 
@@ -847,7 +845,7 @@ export default function AddAssetPage() {
                 </svg>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* Amount display */}
           <div className="flex flex-col gap-3 items-center w-full">
@@ -903,13 +901,22 @@ export default function AddAssetPage() {
   return (
     <div className="min-h-screen pb-32">
       <div className="px-6 pt-8">
-        <PageHeader />
+        <PageHeader
+          title="Add money"
+          buttonColor={pageStyles.dashboard.buttonColor}
+          leftAction={
+            <HeaderButton onClick={handleBack} color={pageStyles.dashboard.buttonColor}>
+              <ArrowLeft className="h-5 w-5" />
+            </HeaderButton>
+          }
+        />
 
-        {currentStep === 1 && <CategoryStep />}
-        {currentStep === 2 && selectedCategory === 'stocks' && <StockStep />}
-        {currentStep === 2 && (selectedCategory === 'cash' || selectedCategory === 'debt') && <CashDebtStep />}
-        {currentStep === 3 && <AmountStep />}
-        {currentStep === 4 && <DateStep />}
+        {currentStep === 1 && <NameEmojiStep />}
+        {currentStep === 2 && <CategoryStep />}
+        {currentStep === 3 && selectedCategory === 'stocks' && <StockStep />}
+        {currentStep === 3 && (selectedCategory === 'cash' || selectedCategory === 'debt') && <CashDebtStep />}
+        {currentStep === 4 && <AmountStep />}
+        {currentStep === 5 && <DateStep />}
       </div>
 
       {/* Fixed Bottom Button */}
@@ -934,7 +941,7 @@ export default function AddAssetPage() {
           ) : (
             <>
               <span className="mr-2">
-                {(currentStep === 4 || (currentStep === 3 && (selectedCategory === 'cash' || selectedCategory === 'debt'))) ? 'Save' : 'Next'}
+                {(currentStep === 5 || (currentStep === 3 && (selectedCategory === 'cash' || selectedCategory === 'debt'))) ? 'Save' : 'Next'}
               </span>
               <span className="text-xl">→</span>
             </>
@@ -943,7 +950,7 @@ export default function AddAssetPage() {
 
         {/* Progress dots */}
         <div className="flex justify-center gap-3 mt-3">
-          {(selectedCategory === 'cash' || selectedCategory === 'debt' ? [1, 2, 3] : [1, 2, 3, 4]).map((step) => (
+          {(selectedCategory === 'cash' || selectedCategory === 'debt' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]).map((step) => (
             <div
               key={step}
               className={`h-1.5 rounded-full transition-all ${
@@ -953,6 +960,15 @@ export default function AddAssetPage() {
           ))}
         </div>
       </div>
+
+      {/* Confetti Effect */}
+      <ConfettiEffect
+        trigger={showConfetti}
+        onComplete={() => {
+          // Always go to accounts page with animation trigger
+          router.replace('/dashboard/accounts?new=true')
+        }}
+      />
     </div>
   )
 }

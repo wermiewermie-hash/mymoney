@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import GoalsClient from '@/components/GoalsClient'
+import { getGoalHistory } from '@/app/actions/goals'
 
 export default async function GoalsPage() {
   const supabase = await createClient()
@@ -30,5 +31,8 @@ export default async function GoalsPage() {
     user_id: user.id,
   }
 
-  return <GoalsClient goal={goal || defaultGoal} />
+  const activeGoal = goal || defaultGoal
+  const goalHistory = activeGoal.id ? await getGoalHistory(activeGoal.id) : []
+
+  return <GoalsClient goal={activeGoal} goalHistory={goalHistory} />
 }

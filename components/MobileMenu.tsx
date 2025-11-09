@@ -6,14 +6,16 @@ import { signOut } from '@/app/actions/auth'
 import { useCurrency } from '@/lib/context/CurrencyContext'
 import { uploadProfilePhoto } from '@/app/actions/profile'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 interface MobileMenuProps {
   username?: string
   totalNetWorth: number
   profilePhotoUrl?: string | null
+  buttonColor?: string
 }
 
-export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }: MobileMenuProps) {
+export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl, buttonColor = '#FFA93D' }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -45,15 +47,19 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
   return (
     <>
       {/* Hamburger Menu Button */}
-      <button
+      <motion.button
         onClick={() => setIsOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
+        className="rounded-full text-white/80 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] size-[36px] p-0 flex items-center justify-center"
+        style={{ backgroundColor: buttonColor }}
+        whileHover={{ opacity: 0.9 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.15 }}
         aria-label="Open menu"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-      </button>
+      </motion.button>
 
       {/* Backdrop Overlay */}
       {isOpen && (
@@ -69,8 +75,8 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Profile Section - Orange gradient header */}
-        <div className="bg-gradient-to-br from-[#FF9933] to-[#FFA93D] pt-6 pb-8 flex flex-col items-center">
+        {/* Profile Section - Pink to yellow gradient header */}
+        <div className="bg-gradient-to-b from-[#FF4E8D] via-[#FF9966] to-[#FFD93D] pt-6 pb-8 flex flex-col items-center">
           {/* Avatar */}
           <input
             ref={fileInputRef}
@@ -106,7 +112,7 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
           </button>
 
           <div className="text-white text-center mb-6">
-            <h3 className="text-[28px] leading-[28px] mb-1">{username || 'User'}</h3>
+            <h3 style={{ fontSize: '24px', lineHeight: '32px' }} className="mb-1 font-lora font-semibold">{username || 'User'}</h3>
             <p className="text-sm text-white/90 leading-[20px]">Total {formatCurrency(totalNetWorth)}</p>
           </div>
 
@@ -149,31 +155,20 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
             className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">🏠</span>
-            </div>
-            <span className="text-sm text-[#5C4033]">Home</span>
-          </Link>
-
-          <Link
-            href="/dashboard/accounts"
-            onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
               <span className="text-xl leading-none">💵</span>
             </div>
-            <span className="text-sm text-[#5C4033]">My Money</span>
+            <span className="text-[18px] font-normal text-[#5C4033]">My Money</span>
           </Link>
 
           <Link
-            href="/dashboard/add-asset"
+            href="/dashboard/history"
             onClick={() => setIsOpen(false)}
             className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">➕</span>
+              <span className="text-xl leading-none">📈</span>
             </div>
-            <span className="text-sm text-[#5C4033]">Add money</span>
+            <span className="text-[18px] font-normal text-[#5C4033]">My Progress</span>
           </Link>
 
           <Link
@@ -184,7 +179,18 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
             <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
               <span className="text-xl leading-none">🎯</span>
             </div>
-            <span className="text-sm text-[#5C4033]">Goals</span>
+            <span className="text-[18px] font-normal text-[#5C4033]">Goal</span>
+          </Link>
+
+          <Link
+            href="/dashboard/accounts"
+            onClick={() => setIsOpen(false)}
+            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
+              <span className="text-xl leading-none">🏦</span>
+            </div>
+            <span className="text-[18px] font-normal text-[#5C4033]">What I own</span>
           </Link>
         </div>
 
@@ -202,7 +208,7 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-sm text-[#5C4033]">Settings</span>
+            <span className="text-[18px] font-normal text-[#5C4033]">Settings</span>
           </Link>
 
           <form action={signOut}>
@@ -213,7 +219,7 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl }:
               <svg className="h-4 w-4 text-[#FF6B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className="text-sm text-[#FF6B6B]">Log Out</span>
+              <span className="text-[18px] font-normal text-[#FF6B6B]">Log Out</span>
             </button>
           </form>
         </div>

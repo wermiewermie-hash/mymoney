@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import type { Asset } from '@/lib/types/database.types'
 import { useCurrency } from '@/lib/context/CurrencyContext'
+import Card from '@/components/Card'
 
 interface AssetBreakdownChartProps {
   assets: Asset[]
@@ -48,7 +49,7 @@ export default function AssetBreakdownChart({ assets }: AssetBreakdownChartProps
   }))
 
   return (
-    <div className="kids-card">
+    <Card>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 bg-[#FFF3E0] rounded-2xl flex items-center justify-center">
           <span className="text-2xl">📊</span>
@@ -110,6 +111,6 @@ export default function AssetBreakdownChart({ assets }: AssetBreakdownChartProps
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

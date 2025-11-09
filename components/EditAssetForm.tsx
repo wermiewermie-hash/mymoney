@@ -5,6 +5,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Asset } from '@/lib/types/database.types'
+import Card from '@/components/Card'
+import PageHeader, { HeaderButton } from '@/components/PageHeader'
+import { pageStyles } from '@/lib/constants/pageStyles'
+import { ArrowLeft, Trash2 } from 'lucide-react'
 
 interface EditAssetFormProps {
   asset: Asset
@@ -30,7 +34,7 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
   const currentPrice = asset.price_per_share || 0
 
   useEffect(() => {
-    if (asset.type === 'stocks' && asset.shares && asset.price_per_share) {
+    if (asset.type === 'stock' && asset.shares && asset.price_per_share) {
       setShares(asset.shares)
       const value = asset.shares * asset.price_per_share
       setMonetaryValue(value)
@@ -68,7 +72,7 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
     setError(null)
 
     // For stocks, set the calculated shares value
-    if (asset.type === 'stocks') {
+    if (asset.type === 'stock') {
       formData.set('shares', shares.toString())
     }
 
@@ -84,7 +88,7 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
 
   async function handleDelete() {
     await deleteAsset(asset.id)
-    router.push('/dashboard')
+    router.push('/dashboard/accounts')
   }
 
   const handleBack = () => {
@@ -95,40 +99,35 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
     <div className="min-h-screen pb-8">
       {/* Header */}
       <div className="px-6 pt-8 pb-6">
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={handleBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-white text-2xl [text-shadow:rgba(0,0,0,0.1)_0px_4px_6px]">Edit Asset</h1>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
+        <PageHeader
+          title="Edit Asset"
+          buttonColor={pageStyles.dashboard.buttonColor}
+          leftAction={
+            <HeaderButton onClick={handleBack} color={pageStyles.dashboard.buttonColor}>
+              <ArrowLeft className="h-5 w-5" />
+            </HeaderButton>
+          }
+          rightAction={
+            <HeaderButton onClick={() => setIsDeleteModalOpen(true)} color={pageStyles.dashboard.buttonColor}>
+              <Trash2 className="h-5 w-5" />
+            </HeaderButton>
+          }
+        />
 
         {/* Instruction Card */}
-        <div className="kids-card text-center mb-6">
+        <Card className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#00BCD4] to-[#0097A7] rounded-full mb-4 shadow-lg">
             <span className="text-4xl">✏️</span>
           </div>
           <h2 className="text-[#5C4033] mb-2">Update Your Asset</h2>
           <p className="text-[#8B7355]">Make changes below</p>
-        </div>
+        </Card>
       </div>
 
       {/* Form */}
       <div className="px-6 space-y-4">
         <form action={handleSubmit} className="space-y-4">
-          <div className="kids-card space-y-4">
+          <Card className="space-y-4">
             <div>
               <label
                 htmlFor="name"
@@ -170,7 +169,7 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
               </select>
             </div>
 
-            {asset.type === 'stocks' && asset.ticker ? (
+            {asset.type === 'stock' && asset.ticker ? (
               <>
                 <div>
                   <label
@@ -288,7 +287,7 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
                 placeholder="Any additional information..."
               />
             </div>
-          </div>
+          </Card>
 
           {error && (
             <div className="bg-gradient-to-br from-white to-[#FFEBEE] border-2 border-[#FF6B6B]/20 rounded-2xl p-4">

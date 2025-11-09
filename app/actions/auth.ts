@@ -7,7 +7,7 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
-  const username = formData.get('username') as string
+  const username = (formData.get('username') as string).toLowerCase()
   const password = formData.get('password') as string
 
   const { error } = await supabase.auth.signUp({
@@ -36,11 +36,11 @@ export async function signIn(formData: FormData) {
   // Create a service role client to bypass RLS for username lookup
   const serviceSupabase = await createClient()
 
-  // Look up the email from the username (using service role to bypass RLS)
+  // Look up the email from the username (case-insensitive using ilike)
   const { data: profile, error: lookupError } = await serviceSupabase
     .from('profiles')
     .select('email')
-    .eq('username', username)
+    .ilike('username', username)
     .maybeSingle()
 
   if (lookupError || !profile || !profile.email) {

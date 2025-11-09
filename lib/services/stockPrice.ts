@@ -1,6 +1,8 @@
 // Stock price service with fallback to mock prices
 // Uses Alpha Vantage API when available, falls back to mock prices
 
+import { createClient } from '@/lib/supabase/server'
+
 interface StockPrice {
   symbol: string
   price: number
@@ -135,4 +137,114 @@ export async function getMultipleStockPrices(tickers: string[]): Promise<Map<str
 // Helper to clear cache (useful for testing)
 export function clearPriceCache() {
   priceCache.clear()
+}
+
+// Get historical stock price for a specific date
+export async function getHistoricalStockPrice(symbol: string, date: Date): Promise<number | null> {
+  const normalizedSymbol = symbol.toUpperCase()
+  const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD format
+
+  // First check database
+  const supabase = await createClient()
+  const { data: stock } = await supabase
+    .from('stocks')
+    .select('id')
+    .eq('symbol', normalizedSymbol)
+    .single()
+
+  if (stock) {
+    const { data: priceRecord } = await supabase
+      .from('stock_prices')
+      .select('price')
+      .eq('stock_id', stock.id)
+      .eq('date', dateStr)
+      .single()
+
+    if (priceRecord) {
+      return priceRecord.price
+    }
+  }
+
+  // If not in database and no API key, use mock price
+  if (!API_KEY) {
+    console.warn(`No historical data for ${normalizedSymbol} on ${dateStr}, using mock price`)
+    return mockPrices[normalizedSymbol] || 100.00
+  }
+
+  // Try to fetch from Alpha Vantage API (TIME_SERIES_DAILY)
+  try {
+    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${normalizedSymbol}&apikey=${API_KEY}`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch historical price for ${normalizedSymbol}`)
+      return mockPrices[normalizedSymbol] || 100.00
+    }
+
+    const data = await response.json()
+
+    if (data['Error Message'] || data['Note']) {
+      console.warn(`API error or rate limit for ${normalizedSymbol}`)
+      return mockPrices[normalizedSymbol] || 100.00
+    }
+
+    const timeSeries = data['Time Series (Daily)']
+    if (!timeSeries || !timeSeries[dateStr]) {
+      console.warn(`No price data found for ${normalizedSymbol} on ${dateStr}`)
+      return mockPrices[normalizedSymbol] || 100.00
+    }
+
+    const price = parseFloat(timeSeries[dateStr]['4. close'])
+
+    // Cache in database if we have a stock_id
+    if (stock) {
+      await supabase.from('stock_prices').insert({
+        stock_id: stock.id,
+        price,
+        date: dateStr
+      }).select().single()
+    }
+
+    return price
+  } catch (error) {
+    console.warn(`Error fetching historical price for ${normalizedSymbol}:`, error)
+    return mockPrices[normalizedSymbol] || 100.00
+  }
+}
+
+// Update stock prices in database (for cron job)
+export async function updateStockPricesInDB(symbols: string[]): Promise<void> {
+  const supabase = await createClient()
+
+  for (const symbol of symbols) {
+    const price = await getStockPrice(symbol)
+    if (price === null) continue
+
+    const normalizedSymbol = symbol.toUpperCase()
+    const today = new Date().toISOString().split('T')[0]
+
+    // Update stocks table
+    const { data: stock } = await supabase
+      .from('stocks')
+      .update({
+        current_price: price,
+        last_updated: new Date().toISOString()
+      })
+      .eq('symbol', normalizedSymbol)
+      .select()
+      .single()
+
+    if (!stock) continue
+
+    // Add to stock_prices history (ignore if already exists for today)
+    await supabase
+      .from('stock_prices')
+      .upsert({
+        stock_id: stock.id,
+        price,
+        date: today
+      }, {
+        onConflict: 'stock_id,date'
+      })
+  }
 }

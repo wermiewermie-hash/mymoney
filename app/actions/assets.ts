@@ -69,6 +69,7 @@ export async function createAsset(formData: FormData) {
   const ticker = formData.get('ticker') as string
   const shares = formData.get('shares') ? parseFloat(formData.get('shares') as string) : null
   const pricePerShare = formData.get('pricePerShare') ? parseFloat(formData.get('pricePerShare') as string) : null
+  const emoji = formData.get('emoji') as string
 
   const { data: insertedAsset, error } = await supabase
     .from('assets')
@@ -82,6 +83,7 @@ export async function createAsset(formData: FormData) {
       ticker: ticker || null,
       shares: shares,
       price_per_share: pricePerShare,
+      emoji: emoji || null,
     })
     .select()
     .single()
@@ -92,14 +94,14 @@ export async function createAsset(formData: FormData) {
 
   // Create initial asset history entry
   if (insertedAsset) {
-    if (type === 'stocks' && shares) {
+    if (type === 'stock' && shares) {
       // For stocks, track shares
       await createAssetHistory(
         insertedAsset.id,
         shares,
         acquisitionDate || new Date().toISOString()
       )
-    } else if (type === 'bank_account' || type === 'debt') {
+    } else if (type === 'cash' || type === 'debt') {
       // For cash/debt, track value
       await createAssetHistory(
         insertedAsset.id,
@@ -130,6 +132,7 @@ export async function updateAsset(id: string, formData: FormData) {
   const name = formData.get('name') as string
   const type = formData.get('type') as AssetType
   const notes = formData.get('notes') as string
+  const emoji = formData.get('emoji') as string
 
   // Get the existing asset to check if it's a stock
   const { data: existingAsset } = await supabase
@@ -147,10 +150,11 @@ export async function updateAsset(id: string, formData: FormData) {
     name,
     type,
     notes: notes || null,
+    emoji: emoji || null,
   }
 
   // Handle stock assets differently
-  if (type === 'stocks' && existingAsset.ticker) {
+  if (type === 'stock' && existingAsset.ticker) {
     const shares = parseFloat(formData.get('shares') as string)
     const changeDate = formData.get('changeDate') as string
 
@@ -167,14 +171,15 @@ export async function updateAsset(id: string, formData: FormData) {
   } else {
     // For non-stock assets (cash/debt), update current_value directly
     const currentValue = parseFloat(formData.get('currentValue') as string)
+    const changeDate = formData.get('changeDate') as string
     updateData.current_value = currentValue
 
     // Create history entry for cash/debt value changes
-    if (type === 'bank_account' || type === 'debt') {
+    if (type === 'cash' || type === 'debt') {
       await createAssetHistory(
         id,
         0, // shares is 0 for cash/debt
-        new Date().toISOString(),
+        changeDate || new Date().toISOString(),
         currentValue
       )
     }

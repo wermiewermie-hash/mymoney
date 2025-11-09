@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Card from '@/components/Card'
 
 interface WelcomeCarouselProps {
   onDismiss: () => void
@@ -69,14 +70,14 @@ export default function WelcomeCarousel({ onDismiss }: WelcomeCarouselProps) {
             </motion.div>
 
             {/* Content Card */}
-            <div className="kids-card text-center mb-8 w-full">
+            <Card className="text-center mb-8 w-full">
               <h2 className="text-[#5C4033] mb-3 text-2xl">
                 {slides[currentSlide].title}
               </h2>
               <p className="text-[#8B7355] text-lg">
                 {slides[currentSlide].description}
               </p>
-            </div>
+            </Card>
 
             {/* Progress Dots */}
             <div className="flex gap-2 mb-8">

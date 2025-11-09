@@ -117,3 +117,29 @@ export async function getAssetHistoricalValues(
 
   return dataPoints
 }
+
+// Get all asset history for the current user
+export async function getAllAssetHistory(): Promise<AssetHistory[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('asset_history')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('change_date', { ascending: false })
+    .limit(50) // Get last 50 changes
+
+  if (error) {
+    console.error('Error fetching all asset history:', error)
+    return []
+  }
+
+  return data || []
+}

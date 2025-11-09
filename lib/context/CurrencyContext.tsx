@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { getExchangeRate } from '@/lib/services/exchangeRate'
 
 type Currency = 'USD' | 'JPY'
 
@@ -9,16 +10,18 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void
   exchangeRate: number
   formatCurrency: (amount: number) => string
+  isLoadingRate: boolean
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
-// Get today's USD to JPY exchange rate (approximate - you can replace with API call)
-const USD_TO_JPY_RATE = 149.5 // Update this or fetch from an API
+// Fallback rate if API fails to load
+const FALLBACK_RATE = 149.5
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<Currency>('USD')
-  const [exchangeRate, setExchangeRate] = useState(USD_TO_JPY_RATE)
+  const [exchangeRate, setExchangeRate] = useState(FALLBACK_RATE)
+  const [isLoadingRate, setIsLoadingRate] = useState(true)
 
   // Load currency preference from localStorage
   useEffect(() => {
@@ -26,6 +29,24 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     if (saved === 'USD' || saved === 'JPY') {
       setCurrency(saved)
     }
+  }, [])
+
+  // Fetch live exchange rate on mount
+  useEffect(() => {
+    const fetchRate = async () => {
+      setIsLoadingRate(true)
+      try {
+        const rate = await getExchangeRate()
+        setExchangeRate(rate)
+      } catch (error) {
+        console.warn('Failed to fetch exchange rate, using fallback:', error)
+        setExchangeRate(FALLBACK_RATE)
+      } finally {
+        setIsLoadingRate(false)
+      }
+    }
+
+    fetchRate()
   }, [])
 
   // Save currency preference to localStorage
@@ -57,7 +78,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, exchangeRate, formatCurrency }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, exchangeRate, formatCurrency, isLoadingRate }}>
       {children}
     </CurrencyContext.Provider>
   )

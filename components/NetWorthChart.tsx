@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { Snapshot } from '@/lib/types/database.types'
 import { useCurrency } from '@/lib/context/CurrencyContext'
+import Card from '@/components/Card'
 
 interface NetWorthChartProps {
   snapshots: Snapshot[]
@@ -21,13 +22,13 @@ export default function NetWorthChart({ snapshots }: NetWorthChartProps) {
 
   if (snapshots.length === 0) {
     return (
-      <div className="kids-card text-center">
+      <Card className="text-center">
         <div className="text-4xl mb-3">📈</div>
         <p className="font-bold text-[#5C4033] mb-2">No History Yet</p>
         <p className="text-[#8B7355] text-sm">
           Add some assets to start tracking your net worth over time!
         </p>
-      </div>
+      </Card>
     )
   }
 
@@ -41,7 +42,7 @@ export default function NetWorthChart({ snapshots }: NetWorthChartProps) {
   }))
 
   return (
-    <div className="kids-card">
+    <Card>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 bg-[#E3F2FD] rounded-2xl flex items-center justify-center">
           <span className="text-2xl">📈</span>
@@ -100,6 +101,6 @@ export default function NetWorthChart({ snapshots }: NetWorthChartProps) {
         </LineChart>
       </ResponsiveContainer>
       </div>
-    </div>
+    </Card>
   )
 }

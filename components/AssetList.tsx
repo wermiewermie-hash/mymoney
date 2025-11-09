@@ -33,7 +33,7 @@ export default function AssetList({ assets }: AssetListProps) {
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
               <span className="text-lg">
-                {asset.type === 'stocks' ? '📈' : asset.type === 'bank_account' ? '💰' : '🏦'}
+                {asset.type === 'stock' ? '📈' : asset.type === 'cash' ? '💰' : '🏦'}
               </span>
             </div>
             <div className="flex-1 min-w-0">

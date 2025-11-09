@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import Card from '@/components/Card'
 
 interface CelebrationProps {
   message?: string
@@ -79,17 +80,7 @@ export default function Celebration({
       ))}
 
       {/* Celebration Card */}
-      <motion.div
-        className="kids-card text-center max-w-md w-full relative z-10"
-        initial={{ scale: 0, rotate: -10 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{
-          type: 'spring',
-          stiffness: 200,
-          damping: 15,
-          delay: 0.2,
-        }}
-      >
+      <Card className="text-center max-w-md w-full relative z-10">
         <motion.div
           className="text-8xl mb-6"
           initial={{ scale: 0 }}
@@ -132,7 +123,7 @@ export default function Celebration({
         >
           Go to Dashboard
         </motion.button>
-      </motion.div>
+      </Card>
     </div>
   )
 }

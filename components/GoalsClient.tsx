@@ -1,14 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { Star, TrendingUp, Edit } from 'lucide-react'
+import { Star, TrendingUp, Edit, ArrowLeft, Trash2 } from 'lucide-react'
 import { useCurrency } from '@/lib/context/CurrencyContext'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { updateGoal, deleteGoal, createGoal } from '@/app/actions/goals'
 import { useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
+import PageHeader, { HeaderButton } from '@/components/PageHeader'
+import { pageStyles } from '@/lib/constants/pageStyles'
+import Card from '@/components/Card'
+import StarProgress from '@/components/StarProgress'
+import type { GoalHistory } from '@/lib/types/database.types'
 
 interface Goal {
   id: string | null
@@ -21,9 +26,117 @@ interface Goal {
 
 interface GoalsClientProps {
   goal: Goal
+  goalHistory: GoalHistory[]
 }
 
-export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
+// Scrollable chart component with scroll to end behavior
+function ScrollableChart({ monthlyData, goalAmount }: { monthlyData: any[], goalAmount: number }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Calculate if content needs scrolling
+  const numBars = monthlyData.length
+  const barWidth = 40 // maxBarSize
+  const spacing = 20 // approximate spacing between bars
+  const estimatedWidth = numBars * (barWidth + spacing) + 100 // +100 for margins
+  const containerWidth = containerRef.current?.clientWidth || 0
+  const needsScroll = estimatedWidth > containerWidth
+
+  useEffect(() => {
+    // Scroll to the right end (most recent data) after a brief delay to ensure rendering
+    const timer = setTimeout(() => {
+      if (scrollRef.current && needsScroll) {
+        const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth
+        scrollRef.current.scrollLeft = maxScroll
+      }
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [monthlyData, needsScroll])
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    const maxScroll = element.scrollWidth - element.clientWidth
+
+    // Prevent scrolling past the left edge (negative scroll)
+    if (element.scrollLeft < 0) {
+      element.scrollLeft = 0
+    }
+    // Prevent scrolling past the right edge (to the "future")
+    if (element.scrollLeft > maxScroll) {
+      element.scrollLeft = maxScroll
+    }
+  }
+
+  const chartWidth = needsScroll ? '700px' : '100%'
+
+  return (
+    <div
+      ref={containerRef}
+      className={needsScroll ? "overflow-x-auto overflow-y-hidden" : "overflow-hidden"}
+      style={{
+        width: 'calc(100% - 40px - 12px)',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
+      }}
+    >
+      <style>{`
+        div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={{
+          width: chartWidth,
+          height: '220px',
+          minWidth: chartWidth,
+        }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={monthlyData}
+            margin={{ top: 10, right: 0, left: -60, bottom: 0 }}
+            barGap={0}
+            barCategoryGap="10%"
+          >
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#FFD740" stopOpacity={0.6} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#8B7355', fontSize: 12 }}
+              padding={{ left: 0, right: 0 }}
+            />
+            <YAxis
+              hide
+              domain={[0, goalAmount]}
+              width={0}
+            />
+            <Bar
+              dataKey="amount"
+              radius={[8, 8, 0, 0]}
+              maxBarSize={40}
+            >
+              {monthlyData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill="url(#barGradient)" />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsClientProps) {
   const { formatCurrency } = useCurrency()
   const router = useRouter()
   const [goal, setGoal] = useState(initialGoal)
@@ -31,6 +144,8 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isAtTop, setIsAtTop] = useState(true)
+  const [celebrateStar, setCelebrateStar] = useState(false)
 
   // Helper function to scroll input into view on focus
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -44,6 +159,7 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
   }
   const [editName, setEditName] = useState(goal.name)
   const [editEmoji, setEditEmoji] = useState(goal.emoji)
+  const [editTargetAmount, setEditTargetAmount] = useState(goal.target_amount.toString())
   const [updateAmount, setUpdateAmount] = useState(goal.current_amount.toString())
   const [loading, setLoading] = useState(false)
   const [createName, setCreateName] = useState('')
@@ -56,20 +172,71 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
     setGoal(initialGoal)
     setEditName(initialGoal.name)
     setEditEmoji(initialGoal.emoji)
+    setEditTargetAmount(initialGoal.target_amount.toString())
     setUpdateAmount(initialGoal.current_amount.toString())
   }, [initialGoal])
 
   const remainingAmount = goal.target_amount - goal.current_amount
   const progressPercentage = (goal.current_amount / goal.target_amount) * 100
 
-  // Mock history data - in a real app, this would come from the database
-  const historyData = [
-    { month: 'Jan', value: 0 },
-    { month: 'Feb', value: 100 },
-    { month: 'Mar', value: 200 },
-    { month: 'Apr', value: 280 },
-    { month: 'May', value: goal.current_amount },
-  ]
+  // Calculate monthly contribution data from goal history
+  const monthlyData = useMemo(() => {
+    if (goalHistory.length === 0) {
+      return []
+    }
+
+    // Group history by month and calculate increments
+    const monthlyMap = new Map<string, number>()
+
+    // Sort history by date
+    const sortedHistory = [...goalHistory].sort((a, b) =>
+      new Date(a.change_date).getTime() - new Date(b.change_date).getTime()
+    )
+
+    // Calculate incremental changes by month
+    let previousAmount = 0
+    sortedHistory.forEach((entry) => {
+      const date = new Date(entry.change_date)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'short' })
+
+      const increment = entry.amount - previousAmount
+
+      if (monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, (monthlyMap.get(monthKey) || 0) + increment)
+      } else {
+        monthlyMap.set(monthKey, increment)
+      }
+
+      previousAmount = entry.amount
+    })
+
+    // Convert to array and get last 12 months
+    const data = Array.from(monthlyMap.entries())
+      .map(([key, amount]) => {
+        const [year, month] = key.split('-')
+        const date = new Date(parseInt(year), parseInt(month) - 1)
+        return {
+          month: date.toLocaleDateString('en-US', { month: 'short' }),
+          amount: Math.abs(amount),
+          key
+        }
+      })
+      .slice(-12) // Most recent last (on right, next to Y axis)
+
+    return data
+  }, [goalHistory])
+
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop
+      setIsAtTop(scrollTop < 10)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const triggerConfetti = () => {
     const duration = 3 * 1000
@@ -106,14 +273,16 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
     const formData = new FormData()
     formData.append('name', editName)
     formData.append('emoji', editEmoji)
+    formData.append('targetAmount', editTargetAmount)
 
     const result = await updateGoal(goal.id, formData)
 
     if (result?.error) {
       alert(result.error)
     } else {
-      setGoal({ ...goal, name: editName, emoji: editEmoji })
+      setGoal({ ...goal, name: editName, emoji: editEmoji, target_amount: parseFloat(editTargetAmount) })
       setIsEditModalOpen(false)
+      router.refresh()
     }
     setLoading(false)
   }
@@ -130,11 +299,20 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
     if (result?.error) {
       alert(result.error)
     } else {
-      setGoal({ ...goal, current_amount: parseFloat(updateAmount) })
+      const newAmount = parseFloat(updateAmount)
+      setGoal({ ...goal, current_amount: newAmount })
+
+      // Check if goal is reached
+      const newProgress = (newAmount / goal.target_amount) * 100
+      if (newProgress >= 100) {
+        setCelebrateStar(true)
+        setTimeout(() => setCelebrateStar(false), 1400) // 0.7s delay + 0.6s animation + 0.1s buffer
+      }
+
       triggerConfetti()
       setTimeout(() => {
         setIsUpdateModalOpen(false)
-      }, 1000)
+      }, 300)
       router.refresh()
     }
     setLoading(false)
@@ -182,26 +360,23 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
   // Zero state - no goal exists
   if (!goal.id) {
     return (
-      <div className="min-h-screen pb-8">
+      <div className="min-h-screen pb-8" style={{ background: pageStyles.goal.background, backgroundAttachment: 'fixed' }}>
         {/* Header */}
-        <div className="px-6 pt-8 pb-0">
-          <div className="flex items-center justify-between mb-8">
-            <button
-              onClick={handleBack}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-white text-2xl [text-shadow:rgba(0,0,0,0.1)_0px_4px_6px]">My Goal</h1>
-            <div className="w-9" /> {/* Spacer */}
-          </div>
+        <div className="px-6 pt-7 pb-0">
+          <PageHeader
+            title="My Goal"
+            buttonColor={pageStyles.goal.buttonColor}
+            leftAction={
+              <HeaderButton onClick={handleBack} color={pageStyles.goal.buttonColor}>
+                <ArrowLeft className="h-5 w-5" />
+              </HeaderButton>
+            }
+          />
         </div>
 
         {/* Zero State Card */}
         <div className="px-6">
-          <div className="kids-card text-center">
+          <Card className="text-center">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-[#9C27B0] to-[#7B1FA2] rounded-full mb-6 shadow-lg">
               <span className="text-5xl">🎯</span>
             </div>
@@ -215,7 +390,7 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
             >
               Create Goal
             </button>
-          </div>
+          </Card>
         </div>
 
         {/* Create Goal Modal */}
@@ -326,248 +501,144 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
   }
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen pb-8" style={{ background: pageStyles.goal.background, backgroundAttachment: 'fixed' }}>
       {/* Header */}
-      <div className="px-6 pt-8 pb-0">
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={handleBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-white text-2xl [text-shadow:rgba(0,0,0,0.1)_0px_4px_6px]">My Goal</h1>
-          <button
-            onClick={() => {
-              setEditName(goal.name)
-              setEditEmoji(goal.emoji)
-              setIsEditModalOpen(true)
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFA93D] to-[#FFD740] hover:opacity-90 text-white shadow-md transition-opacity"
-          >
-            <Edit className="h-5 w-5" />
-          </button>
-        </div>
+      <div className="px-6 pt-7 pb-0">
+        <PageHeader
+          title="My Goal"
+          buttonColor={pageStyles.goal.buttonColor}
+          leftAction={
+            <HeaderButton onClick={handleBack} color={pageStyles.goal.buttonColor}>
+              <ArrowLeft className="h-5 w-5" />
+            </HeaderButton>
+          }
+          rightAction={
+            <HeaderButton
+              onClick={() => {
+                setEditName(goal.name)
+                setEditEmoji(goal.emoji)
+                setEditTargetAmount(goal.target_amount.toString())
+                setIsEditModalOpen(true)
+              }}
+              color={pageStyles.goal.buttonColor}
+            >
+              <Edit className="h-5 w-5" />
+            </HeaderButton>
+          }
+        />
       </div>
 
-      {/* Goal Illustration */}
-      <div className="px-6 mb-6">
-        <div className="kids-card relative overflow-hidden bg-gradient-to-br from-white via-[#F0F9FF] to-[#E3F2FD]">
-          {/* Decorative stars */}
-          <div className="absolute top-4 right-4">
-            <Star className="w-6 h-6 text-[#FFC107] fill-[#FFC107] animate-pulse" />
-          </div>
-          <div className="absolute top-12 right-16">
-            <Star className="w-4 h-4 text-[#FFC107] fill-[#FFC107] animate-pulse" style={{ animationDelay: '0.2s' }} />
-          </div>
-          <div className="absolute top-8 left-8">
-            <Star className="w-5 h-5 text-[#FFC107] fill-[#FFC107] animate-pulse" style={{ animationDelay: '0.4s' }} />
-          </div>
-
-          {/* Console Illustration */}
-          <div className="relative py-12 flex justify-center items-center">
-            <div className="relative">
-              {/* Main console body */}
-              <div className="w-64 h-40 bg-gradient-to-br from-[#5C4033] via-[#8B5A3C] to-[#5C4033] rounded-3xl shadow-2xl relative overflow-hidden">
-                {/* Screen area */}
-                <div className="absolute top-3 left-3 right-3 h-20 bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1e] rounded-2xl border-4 border-[#4a3829] shadow-inner">
-                  <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#4A90E2] to-[#2E5C8A]">
-                      <div className="absolute top-1 left-4 w-6 h-3 bg-white/40 rounded-full"></div>
-                      <div className="absolute top-2 right-8 w-8 h-3 bg-white/30 rounded-full"></div>
-                      <div className="absolute bottom-0 left-0 right-0 h-6 bg-[#52C41A]"></div>
-                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-                        <div className="w-4 h-6 bg-[#FF6B6B] rounded-sm"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* D-pad */}
-                <div className="absolute bottom-6 left-8 w-14 h-14">
-                  <div className="relative w-full h-full">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gradient-to-b from-[#2d2d2d] to-[#1a1a1a] rounded"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-5 bg-gradient-to-r from-[#2d2d2d] to-[#1a1a1a] rounded"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#1a1a1a] rounded-full"></div>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="absolute bottom-8 right-8 flex gap-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-[#FF6B6B] to-[#d94444] rounded-full shadow-lg border-2 border-[#4a3829]"></div>
-                  <div className="w-6 h-6 bg-gradient-to-br from-[#52C41A] to-[#389E0D] rounded-full shadow-lg border-2 border-[#4a3829]"></div>
-                </div>
-
-                {/* Small buttons */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3">
-                  <div className="w-8 h-2 bg-[#2d2d2d] rounded-full"></div>
-                  <div className="w-8 h-2 bg-[#2d2d2d] rounded-full"></div>
-                </div>
-              </div>
-
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-radial from-[#FFC107]/20 to-transparent blur-xl -z-10"></div>
-            </div>
-          </div>
-
-          <div className="text-center pt-4">
-            <h2 className="text-[#5C4033] mb-2">{goal.name}</h2>
-            <p className="text-[#8B7355]">The ultimate gaming experience!</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Section */}
+      {/* Content */}
       <div className="px-6 space-y-4">
-        {/* Current Savings Card */}
-        <div className="kids-card">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-sm text-[#8B7355] mb-1">Current Savings</p>
-              <div className="text-4xl text-[#5C4033]">{formatCurrency(goal.current_amount)}</div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-[#8B7355] mb-1">Goal</p>
-              <div className="text-[18px] text-[#5C4033]">{formatCurrency(goal.target_amount)}</div>
+        {/* Goal Title Card with Image */}
+        <div className="h-[240px] relative w-full">
+          {/* The main card */}
+          <div className="absolute bg-gradient-to-b from-[#ffffff] to-[#fff8e1] bottom-0 flex flex-col gap-[24px] h-[169.994px] left-0 pb-[24px] pt-[79.565px] px-[24px] rounded-[24px] w-full">
+            <div className="absolute border-[0.572px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[24px] shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" />
+
+            <div className="h-[48.002px] w-full">
+              <p className="font-lora font-semibold text-[#5c4033] text-center" style={{ fontSize: '24px', lineHeight: '30px' }}>{goal.name}</p>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-2 mb-6">
-            <div className="relative h-4 bg-[#E0E0E0] rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#52C41A] to-[#389E0D] rounded-full"
+          {/* Target Image */}
+          <div className="absolute h-[140px] left-[calc(50%+0.088px)] top-[-19px] translate-x-[-50%] w-[140.903px]">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <img
+                alt=""
+                className="absolute h-[128.69%] left-[-51.5%] max-w-none top-[-13.21%] w-[204.59%]"
+                src="/3ba8b21fc0883109330c801a66eb33a69170e201.png"
               />
             </div>
-            <div className="flex justify-between text-sm text-[#8B7355]">
-              <span>{Math.round(progressPercentage)}% complete</span>
-              <span>{formatCurrency(remainingAmount)} to go</span>
-            </div>
-          </div>
-
-          {/* Milestone indicator */}
-          <div className="bg-gradient-to-r from-[#FFF3E0] to-[#FFE4C4] rounded-2xl p-4 flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#FFC107] to-[#FFA000] rounded-full flex items-center justify-center shadow-md flex-shrink-0">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[#8B5A3C]">You're almost there!</p>
-              <p className="text-sm text-[#8B7355]">Keep saving to reach your goal</p>
-            </div>
-          </div>
-
-          {/* Update Button */}
-          <button
-            onClick={() => {
-              setUpdateAmount(goal.current_amount.toString())
-              setIsUpdateModalOpen(true)
-            }}
-            className="w-full bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
-          >
-            Update Savings
-          </button>
-        </div>
-
-        {/* History Card */}
-        <div className="kids-card">
-          <h3 className="text-[#5C4033] mb-4">Progress History</h3>
-          <div className="h-48 outline-none [&_*]:outline-none">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={historyData}>
-                <defs>
-                  <linearGradient id="goalColorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#9C27B0" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#9C27B0" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#8B7355', fontSize: 12 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#8B7355', fontSize: 12 }}
-                  width={40}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#9C27B0"
-                  strokeWidth={3}
-                  fill="url(#goalColorValue)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link href="/dashboard/add-asset" className="kids-card text-center cursor-pointer hover:shadow-xl transition-all">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[#52C41A] to-[#389E0D] rounded-2xl mb-3 shadow-md">
-              <span className="text-2xl">💵</span>
+        {/* Progress Card */}
+        <Card noPadding>
+          <div className="flex flex-col items-center size-full p-[25px]">
+            {/* Info Banner */}
+            <div className="bg-gradient-to-b from-[rgba(69,226,235,0.22)] to-[rgba(69,226,235,0.05)] flex h-[80px] items-center justify-center rounded-[12px] w-full mb-[24px]">
+              <div className="flex gap-[8px] items-center justify-center text-[#5c4033]">
+                <p className="font-normal text-[18px] leading-[28px]">{goal.emoji}</p>
+                <p className="font-medium text-[14px] leading-[20px]">
+                  {progressPercentage >= 100
+                    ? "Congratulations! You reached your goal!"
+                    : `Only ${formatCurrency(remainingAmount)} more to go!`}
+                </p>
+              </div>
             </div>
-            <p className="text-[#5C4033]">Add Money</p>
-          </Link>
 
-          <Link href="/dashboard" className="kids-card text-center cursor-pointer hover:shadow-xl transition-all">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[#00BCD4] to-[#0097A7] rounded-2xl mb-3 shadow-md">
-              <span className="text-2xl">📊</span>
+            {/* Star Progress Visualization */}
+            <div className="relative flex items-center justify-center mb-[24px]" style={{ marginTop: '12px' }}>
+              <StarProgress progress={progressPercentage} size={182} inView={true} celebrate={celebrateStar} />
             </div>
-            <p className="text-[#5C4033]">View History</p>
-          </Link>
-        </div>
 
-        {/* Encouragement Card */}
-        <div className="kids-card bg-gradient-to-br from-[#9C27B0] to-[#7B1FA2] text-white">
-          <div className="flex items-center gap-4">
-            <div className="text-5xl">🎉</div>
-            <div>
-              <h3 className="mb-1">Great Progress!</h3>
-              <p className="text-sm text-white/90">
-                You've saved {Math.round(progressPercentage)}% of your goal. Keep up the amazing work!
-              </p>
+            {/* Saved and Goal amounts */}
+            <div className="flex justify-between items-start px-3 w-full">
+              <div>
+                <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Saved</p>
+                <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goal.current_amount)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Goal</p>
+                <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goal.target_amount)}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Delete Goal Button */}
-        <div className="kids-card bg-gradient-to-br from-white to-[#FFEBEE]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full flex items-center justify-center shadow-lg">
-              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+        {/* What I've Saved Card */}
+        {monthlyData.length > 0 && (
+          <Card noPadding>
+            <div className="size-full overflow-hidden rounded-[24px]">
+              <div className="flex flex-col gap-[35.995px] items-start pb-[24.568px] pt-[24.568px] pl-[24.568px] w-full">
+                {/* Header */}
+                <div className="w-full pr-[24.568px]">
+                  <h3 className="font-semibold leading-[28px] text-[#5c4033] text-[18px]">What I've saved</h3>
+                </div>
+
+                {/* Chart with fixed Y-axis and scrollable bars */}
+                <div className="h-[220px] w-full flex pr-0 gap-[12px]">
+                  {/* Fixed Y-axis */}
+                  <div className="flex-shrink-0 flex flex-col justify-end" style={{ width: '40px', height: '220px', paddingBottom: '30px' }}>
+                    <div className="flex flex-col-reverse justify-between h-full">
+                      {(() => {
+                        const step = goal.target_amount / 4
+                        return Array.from({ length: 5 }, (_, i) => (
+                          <p key={i} className="text-[#8B7355] text-[12px] text-right pr-2">
+                            {Math.round(i * step)}
+                          </p>
+                        ))
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Scrollable chart area */}
+                  <ScrollableChart monthlyData={monthlyData} goalAmount={goal.target_amount} />
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-[#5C4033] font-semibold">Delete Goal</h3>
-              <p className="text-sm text-[#8B7355]">Permanently remove this goal</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
-          >
-            Delete Goal
-          </button>
-        </div>
+          </Card>
+        )}
       </div>
+
+      {/* Add Savings Button */}
+      <motion.div
+        className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#45E2EB] via-[#45E2EB] to-transparent z-10"
+        initial={{ y: 0 }}
+        animate={{ y: isAtTop ? 0 : 200 }}
+        transition={{ duration: 0.5, ease: [0.6, 0, 0.1, 1] }}
+      >
+        <button
+          onClick={() => {
+            setUpdateAmount(goal.current_amount.toString())
+            setIsUpdateModalOpen(true)
+          }}
+          className="w-full h-16 text-lg shadow-2xl transition-all rounded-[18px] bg-gradient-to-b from-[#D061DE] to-[#B84BC4] text-white hover:from-[#B84BC4] hover:to-[#D061DE] active:scale-[0.98]"
+        >
+          <span>Add savings</span>
+        </button>
+      </motion.div>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
@@ -630,11 +701,23 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4"
+              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 relative"
             >
-              <h2 className="text-xl font-bold text-[#5C4033]">Edit Goal</h2>
+              {/* Trash Icon in top right corner */}
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false)
+                  setIsDeleteModalOpen(true)
+                }}
+                disabled={loading}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E3F2FD] transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="h-5 w-5 text-[#5C4033]" />
+              </button>
 
-              <div>
+              <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Goal</h2>
+
+              <div className="pb-3">
                 <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>
                 <input
                   type="text"
@@ -646,7 +729,7 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
                 />
               </div>
 
-              <div>
+              <div className="pb-3">
                 <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
                 <div className="grid grid-cols-5 gap-2">
                   {emojiOptions.map((emoji) => (
@@ -663,6 +746,20 @@ export default function GoalsClient({ goal: initialGoal }: GoalsClientProps) {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="pb-3">
+                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Amount</label>
+                <input
+                  type="number"
+                  step="1"
+                  inputMode="numeric"
+                  value={editTargetAmount}
+                  onChange={(e) => setEditTargetAmount(e.target.value)}
+                  onFocus={handleInputFocus}
+                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+                  placeholder="450"
+                />
               </div>
 
               <div className="flex gap-3 pt-2">

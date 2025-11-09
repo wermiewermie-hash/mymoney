@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import CurrencyDisplay from './CurrencyDisplay'
+import Card from '@/components/Card'
 
 interface NetWorthCardProps {
   totalNetWorth: number
@@ -24,7 +25,7 @@ export default function NetWorthCard({ totalNetWorth, assetCount }: NetWorthCard
   ]
 
   return (
-    <div className="kids-card overflow-hidden">
+    <Card className="overflow-hidden">
       {/* Sparkles */}
       {sparkles.map((sparkle, index) => (
         <motion.div
@@ -78,6 +79,6 @@ export default function NetWorthCard({ totalNetWorth, assetCount }: NetWorthCard
           {assetCount} asset{assetCount !== 1 ? 's' : ''} tracked
         </p>
       </div>
-    </div>
+    </Card>
   )
 }
