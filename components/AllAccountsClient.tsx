@@ -264,7 +264,7 @@ export default function AllAccountsClient({ assets }: AllAccountsClientProps) {
                               <p className="text-[#8b7355] text-[14px] leading-[18px]">
                                 {getAssetDetails(asset)}
                               </p>
-                              <p className="text-[14px] leading-[18px]" style={{ color: colors.text }}>
+                              <p className={`text-[14px] leading-[18px] ${isDebt ? 'text-[#ff9500]' : 'text-[#52C41A]'}`}>
                                 {isDebt ? '- ' : ''}{formatCurrency(asset.current_value)}
                               </p>
                             </div>

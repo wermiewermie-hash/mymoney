@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useCurrency } from '@/lib/context/CurrencyContext'
 import type { Asset, AssetHistory } from '@/lib/types/database.types'
@@ -105,6 +106,7 @@ export default function HistoryClient({ snapshots, assets, assetHistory }: Histo
   const activityList = useMemo(() => {
     const activities: Array<{
       id: string
+      assetId: string
       date: Date
       title: string
       subtitle: string
@@ -173,6 +175,7 @@ export default function HistoryClient({ snapshots, assets, assetHistory }: Histo
         if (amount > 0 || index === 0) {
           activities.push({
             id: history.id,
+            assetId: asset.id,
             date,
             title,
             subtitle,
@@ -369,28 +372,30 @@ export default function HistoryClient({ snapshots, assets, assetHistory }: Histo
           {activityList.length > 0 ? (
             <div className="flex flex-col gap-[16px] w-full">
               {activityList.map((item) => (
-                <div key={item.id} className="flex items-start justify-between w-full">
-                  <div className="flex gap-[16px] items-center">
-                    <div className="bg-[rgba(255,179,102,0.25)] rounded-[12px] size-[39.993px] flex items-center justify-center">
-                      <span className="leading-[28px] text-[16px] text-[#5c4033]">{item.emoji}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <p className="font-semibold leading-[20px] text-[#5c4033] text-[14px]">{item.title}</p>
-                      <div className="flex gap-[2px] leading-[20px] text-[#8b7355] text-[12px]">
-                        <p>{item.subtitle}</p>
+                <Link key={item.id} href={`/dashboard/accounts/${item.assetId}`}>
+                  <div className="flex items-start justify-between w-full cursor-pointer hover:bg-[rgba(255,179,102,0.1)] -mx-4 px-4 py-2 rounded-xl transition-colors">
+                    <div className="flex gap-[16px] items-center">
+                      <div className="bg-[rgba(255,179,102,0.25)] rounded-[12px] size-[39.993px] flex items-center justify-center">
+                        <span className="leading-[28px] text-[16px] text-[#5c4033]">{item.emoji}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <p className="font-semibold leading-[20px] text-[#5c4033] text-[14px]">{item.title}</p>
+                        <div className="flex gap-[2px] leading-[20px] text-[#8b7355] text-[12px]">
+                          <p>{item.subtitle}</p>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex flex-col justify-center leading-[0]">
+                      <p
+                        className={`font-medium leading-[20px] text-[14px] text-right ${
+                          item.isPositive ? 'text-[#389e0d]' : 'text-[#8b7355]'
+                        }`}
+                      >
+                        {item.isPositive ? '+ ' : '- '}{formatCurrency(item.amount)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-col justify-center leading-[0]">
-                    <p
-                      className={`font-medium leading-[20px] text-[14px] text-right ${
-                        item.isPositive ? 'text-[#389e0d]' : 'text-[#8b7355]'
-                      }`}
-                    >
-                      {item.isPositive ? '+ ' : '- '}{formatCurrency(item.amount)}
-                    </p>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

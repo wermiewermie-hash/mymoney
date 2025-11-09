@@ -361,35 +361,49 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
 
             {/* Savings Goal Card */}
             <Card
-              onClick={() => router.push('/dashboard/goals')}
+              onClick={goal ? () => router.push('/dashboard/goals') : undefined}
               onViewportEnter={() => setGoalCardInView(true)}
               viewport={{ once: true, margin: "-100px" }}
             >
               <div className="flex items-center justify-between py-2 mb-6">
                 <h3 className="text-[#5C4033] font-semibold" style={{ fontSize: '18px', lineHeight: '28px' }}>{goalName}</h3>
-                <ChevronRight className="w-5 h-5 text-[#1E1E1E]" />
+                {goal && <ChevronRight className="w-5 h-5 text-[#1E1E1E]" />}
               </div>
 
-              {/* Goal Visual - Star Progress */}
-              <div className="relative flex items-center justify-center mb-6">
-                <StarProgress progress={goalProgress} size={182} inView={goalCardInView} />
-              </div>
+              {goal ? (
+                <>
+                  {/* Goal Visual - Star Progress */}
+                  <div className="relative flex items-center justify-center mb-6">
+                    <StarProgress progress={goalProgress} size={182} inView={goalCardInView} />
+                  </div>
 
-              {/* Goal Details */}
-              <div className="flex justify-between items-start px-3">
-                <div>
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Saved</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalCurrent)}</p>
+                  {/* Goal Details */}
+                  <div className="flex justify-between items-start px-3">
+                    <div>
+                      <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Saved</p>
+                      <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalCurrent)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Goal</p>
+                      <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalTarget)}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-6xl mb-4">🎯</div>
+                  <p className="text-[#5C4033] mb-4">Create your savings goal</p>
+                  <Link href="/dashboard/goals">
+                    <button className="bg-gradient-to-b from-[#52C41A] to-[#389E0D] text-white font-semibold px-6 py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                      Set your goal
+                    </button>
+                  </Link>
                 </div>
-                <div className="text-right">
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Goal</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalTarget)}</p>
-                </div>
-              </div>
+              )}
             </Card>
 
             {/* What I own - Pie Chart */}
-            {assetBreakdown.length > 0 && (
+            {assetBreakdown.length > 0 ? (
               <Card
                 onClick={() => router.push('/dashboard/accounts')}
                 onViewportEnter={() => setAssetsCardInView(true)}
@@ -437,6 +451,21 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
                       </span>
                     </div>
                   ))}
+                </div>
+              </Card>
+            ) : (
+              <Card onViewportEnter={() => setAssetsCardInView(true)} viewport={{ once: true, margin: "-100px" }}>
+                <div className="flex items-center justify-between py-2 mb-4">
+                  <h3 className="text-[#5C4033] font-semibold" style={{ fontSize: '18px', lineHeight: '28px' }}>What I own</h3>
+                </div>
+                <div className="text-center py-8">
+                  <div className="text-6xl mb-4">💰</div>
+                  <p className="text-[#5C4033] mb-4">Start by adding your money</p>
+                  <Link href="/dashboard/add-asset?returnUrl=%2Fdashboard">
+                    <button className="bg-gradient-to-b from-[#52C41A] to-[#389E0D] text-white font-semibold px-6 py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                      Add an account
+                    </button>
+                  </Link>
                 </div>
               </Card>
             )}

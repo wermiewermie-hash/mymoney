@@ -19,7 +19,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-[#ff4e8d] via-[#ff9966] via-50% to-[#ffd93d] min-h-screen relative">
+    <div className="bg-gradient-to-b from-[#ff4e8d] via-[#ff9966] via-50% to-[#ffd93d] min-h-screen relative pb-16">
       {/* Header with Title and Illustration */}
       <div className="flex flex-col gap-[36px] items-center px-[40px] pt-[77px] pb-[38px]">
         <p className="font-lora font-semibold text-center text-white w-full" style={{ fontSize: '36px', lineHeight: '42px' }}>
