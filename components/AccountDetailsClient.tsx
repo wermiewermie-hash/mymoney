@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useCurrency } from '@/lib/context/CurrencyContext'
@@ -10,7 +10,7 @@ import type { Asset, AssetHistory } from '@/lib/types/database.types'
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
-import { updateAsset } from '@/app/actions/assets'
+import { updateAsset, deleteAsset } from '@/app/actions/assets'
 
 // SVG paths for calendar arrows
 const SVG_PATHS = {
@@ -187,6 +187,22 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
     }
 
     setLoading(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+      return
+    }
+
+    setLoading(true)
+    const result = await deleteAsset(asset.id)
+
+    if (result?.error) {
+      alert(result.error)
+      setLoading(false)
+    } else {
+      router.push('/dashboard/accounts')
+    }
   }
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -873,8 +889,18 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4"
+              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 relative"
             >
+              {/* Delete button in top right */}
+              <button
+                onClick={handleDelete}
+                disabled={loading}
+                className="absolute top-6 right-6 p-2 text-[#8B7355] hover:text-[#5C4033] transition-colors disabled:opacity-50"
+                aria-label="Delete account"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+
               <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Account</h2>
 
               <div className="pb-3">
