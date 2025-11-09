@@ -302,11 +302,13 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
             {/* My Progress - Area Chart */}
             {timelineData.length > 0 && (
               <Card
-                onClick={() => router.push('/dashboard/history')}
                 onViewportEnter={() => setProgressCardInView(true)}
                 viewport={{ once: true, margin: "-100px" }}
               >
-                <div className="flex items-center justify-between py-2 mb-6">
+                <div
+                  className="flex items-center justify-between py-2 mb-6 cursor-pointer"
+                  onClick={() => router.push('/dashboard/history')}
+                >
                   <h3 className="text-[#5C4033] font-semibold" style={{ fontSize: '18px', lineHeight: '28px' }}>My Progress</h3>
                   <ChevronRight className="w-5 h-5 text-[#1E1E1E]" />
                 </div>
@@ -339,6 +341,7 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
                           borderRadius: '12px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}
+                        formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
                       />
                       <Area
                         type="monotone"

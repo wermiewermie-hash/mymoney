@@ -46,29 +46,22 @@ export default function HistoryClient({ snapshots, assets, assetHistory }: Histo
     router.back()
   }
 
-  // Filter snapshots based on selected time range
-  const getFilteredSnapshots = () => {
-    const now = new Date()
-    const cutoffDate = new Date()
-
-    switch (selectedTimeRange) {
-      case 'month':
-        cutoffDate.setMonth(now.getMonth() - 1)
-        break
-      case 'year':
-        cutoffDate.setFullYear(now.getFullYear() - 1)
-        break
-      case 'all':
-      default:
-        return snapshots
-    }
-
-    return snapshots.filter(s => new Date(s.snapshot_date) >= cutoffDate)
-  }
-
   // Get chart data based on selected time range
   const chartData = useMemo(() => {
-    const filtered = getFilteredSnapshots()
+    // Filter snapshots based on selected time range
+    const now = new Date()
+    const cutoffDate = new Date()
+    let filtered = snapshots
+
+    if (selectedTimeRange === 'month') {
+      cutoffDate.setMonth(now.getMonth() - 1)
+      filtered = snapshots.filter(s => new Date(s.snapshot_date) >= cutoffDate)
+    } else if (selectedTimeRange === 'year') {
+      cutoffDate.setFullYear(now.getFullYear() - 1)
+      filtered = snapshots.filter(s => new Date(s.snapshot_date) >= cutoffDate)
+    }
+
+    // Map to chart data format
     return filtered.map(snapshot => {
       const date = new Date(snapshot.snapshot_date)
       let label = ''

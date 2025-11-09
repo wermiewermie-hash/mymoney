@@ -396,7 +396,10 @@ export default function AddAssetPage() {
               type="text"
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
+              onFocus={handleInputFocus}
               autoFocus
+              autoCapitalize="words"
+              autoComplete="off"
               className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5c4033] placeholder-[#8B7355]"
               placeholder="e.g., My savings"
             />
@@ -828,6 +831,7 @@ export default function AddAssetPage() {
                   onFocus={(e) => {
                     setIsEditingShares(true)
                     setSharesInput(shares > 0 ? shares.toString() : '')
+                    handleInputFocus(e)
                   }}
                   className="text-[#5c4033] font-medium bg-transparent border-none outline-none text-center"
                   style={{ fontSize: '42px', lineHeight: '1', width: '120px' }}
