@@ -3,6 +3,7 @@
 import { updatePassword } from '@/app/actions/auth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import Modal from '@/components/Modal'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -11,6 +12,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [showAppPicker, setShowAppPicker] = useState(false)
 
   useEffect(() => {
     // Check if we have the recovery token in the URL
@@ -46,9 +48,14 @@ export default function ResetPasswordPage() {
       setError(result.error)
       setLoading(false)
     } else {
-      // Success - redirect to dashboard
-      router.push('/dashboard')
+      // Success - show app picker
+      setLoading(false)
+      setShowAppPicker(true)
     }
+  }
+
+  function handleAppChoice(appUrl: string) {
+    window.location.href = `${appUrl}/dashboard`
   }
 
   return (
@@ -56,7 +63,7 @@ export default function ResetPasswordPage() {
       {/* Header with Title and Illustration */}
       <div className="flex flex-col gap-[36px] items-center px-[40px] pt-[77px] pb-[38px]">
         <p className="font-lora font-semibold text-center text-white w-full" style={{ fontSize: '36px', lineHeight: '42px' }}>
-          Reset Password
+          Reset Your Password
         </p>
         <div className="w-[300px] flex items-center justify-center">
           <img
@@ -145,6 +152,37 @@ export default function ResetPasswordPage() {
           </p>
         </div>
       </div>
+
+      {/* App Picker Modal */}
+      <Modal isOpen={showAppPicker} onClose={() => {}} loading={false}>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#52C41A] to-[#389E0D] rounded-full mb-4 shadow-lg">
+            <span className="text-3xl">✓</span>
+          </div>
+          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Password Reset Successfully!</h2>
+          <p className="text-[#8B7355] mb-6">
+            Where would you like to go?
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => handleAppChoice('https://mymoney-gilt-six.vercel.app')}
+            className="bg-gradient-to-r from-[#ff4e8d] to-[#ff9966] text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span className="text-2xl">🎈</span>
+            <span>Kids App</span>
+          </button>
+
+          <button
+            onClick={() => handleAppChoice('https://mymoney-agxx.vercel.app')}
+            className="bg-gradient-to-r from-[#4A90E2] to-[#357ABD] text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span className="text-2xl">👨‍👩‍👧</span>
+            <span>Parent App</span>
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

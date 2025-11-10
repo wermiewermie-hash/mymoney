@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -21,9 +23,6 @@ export default function LoginPage() {
   }
 
   async function handlePasswordReset() {
-    const emailInput = document.querySelector('input[name="email"]') as HTMLInputElement
-    const email = emailInput?.value
-
     if (!email) {
       setError('Please enter your email address first')
       return
@@ -77,6 +76,8 @@ export default function LoginPage() {
                   name="email"
                   required
                   autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="bg-[rgba(255,149,0,0.1)] h-[64px] rounded-[18px] w-full px-4 font-semibold text-[16px] text-[#5c4033] outline-none focus:ring-2 focus:ring-[#ff9500] transition-all"
                   placeholder=""
                 />
@@ -92,6 +93,8 @@ export default function LoginPage() {
                   name="password"
                   required
                   autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="bg-[rgba(255,149,0,0.1)] h-[64px] rounded-[18px] w-full px-4 font-semibold text-[16px] text-[#5c4033] outline-none focus:ring-2 focus:ring-[#ff9500] transition-all"
                   placeholder=""
                 />
