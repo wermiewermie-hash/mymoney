@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Money - Monorepo
 
-## Getting Started
+This monorepo contains both the Parent and Kids apps for the My Money family finance tracking application.
 
-First, run the development server:
+## Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+mymoney/
+├── apps/
+│   ├── parent-app/     # Parent dashboard (Net Worth Tracker)
+│   └── kids-app/       # Kids dashboard (Allowance & Goals)
+├── shared/             # Shared components, utilities, and styles (for future use)
+└── .git/               # Single git repository
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Apps
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Parent App
+- **Local Development**: `http://localhost:3001`
+- **Production URL**: https://mymoney-agxx.vercel.app
+- **Vercel Project**: `mymoney-parents`
+- **Features**: Net worth tracking, asset management, stock portfolio, family goals
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Kids App
+- **Local Development**: `http://localhost:3000`
+- **Production URL**: https://mymoney-gilt-six.vercel.app
+- **Vercel Project**: `mymoney-kids`
+- **Features**: Allowance tracking, savings goals, kid-friendly interface
 
-## Learn More
+## Development
 
-To learn more about Next.js, take a look at the following resources:
+Each app runs independently:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Parent app
+cd apps/parent-app
+npm install
+npm run dev  # Runs on port 3001
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Kids app
+cd apps/kids-app
+npm install
+npm run dev  # Runs on port 3000
+```
 
-## Deploy on Vercel
+## Shared Authentication & Database
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Both apps share:
+- Supabase authentication system
+- Unified password reset flow (hosted on parent app)
+- PostgreSQL database with separate tables for each app
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Each app is deployed separately to Vercel:
+- Vercel projects point to respective subdirectories (`apps/parent-app` and `apps/kids-app`)
+- Environment variables are configured per project
+- Both apps share the same GitHub repository
+
+## Future Improvements
+
+The `shared/` directory is prepared for extracting common components:
+- Modal components
+- Card layouts
+- Color schemes and design tokens
+- Authentication utilities
+- Supabase client configuration
