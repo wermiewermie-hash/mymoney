@@ -13,15 +13,27 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [showAppPicker, setShowAppPicker] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(true)
 
   useEffect(() => {
-    // Check if we have the recovery token in the URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const type = hashParams.get('type')
+    // Verify the user has an active session from the password recovery flow
+    const verifySession = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-    if (type !== 'recovery') {
-      setError('Invalid or expired reset link. Please request a new password reset.')
+        if (error || !session) {
+          setError('Invalid or expired reset link. Please request a new password reset.')
+        }
+      } catch (err) {
+        setError('Invalid or expired reset link. Please request a new password reset.')
+      } finally {
+        setIsVerifying(false)
+      }
     }
+
+    verifySession()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,6 +91,21 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col gap-[24px] items-center w-full">
           {/* Form Card */}
           <div className="kids-card w-full">
+            {isVerifying ? (
+              <div className="flex items-center justify-center py-12">
+                <svg className="animate-spin h-8 w-8 text-[#5c4033]" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            ) : error ? (
+              <div className="bg-gradient-to-br from-white to-[#FFEBEE] border-2 border-[#FF6B6B]/20 rounded-2xl p-4">
+                <div className="flex gap-3 items-start">
+                  <span className="text-2xl shrink-0">⚠️</span>
+                  <p className="text-[#FF6B6B] font-medium">{error}</p>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-[24px]">
               {/* New Password Field */}
               <div className="flex flex-col gap-[8px] w-full">
@@ -144,12 +171,14 @@ export default function ResetPasswordPage() {
                 )}
               </button>
             </form>
+            )}
           </div>
 
-          {/* Help Text */}
+          {!isVerifying && !error && (
           <p className="font-normal text-[14px] leading-[18px] text-[#5c4033] text-center w-full">
             Choose a strong password that you haven't used before.
           </p>
+          )}
         </div>
       </div>
 

@@ -63,7 +63,7 @@ export async function resetPassword(email: string) {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://mymoney-agxx.vercel.app/reset-password`,
+    redirectTo: `https://mymoney-agxx.vercel.app/auth/callback?next=/reset-password`,
   })
 
   if (error) {
