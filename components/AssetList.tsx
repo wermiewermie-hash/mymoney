@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { deleteAsset } from '@/app/actions/assets'
 import { useState } from 'react'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
+import Modal from '@/components/Modal'
 
 interface AssetListProps {
   assets: Asset[]
@@ -12,15 +13,22 @@ interface AssetListProps {
 
 export default function AssetList({ assets }: AssetListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null)
 
-  async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this asset?')) {
-      return
-    }
+  function handleDeleteClick(asset: Asset) {
+    setAssetToDelete(asset)
+    setIsDeleteModalOpen(true)
+  }
 
-    setDeletingId(id)
-    await deleteAsset(id)
+  async function confirmDelete() {
+    if (!assetToDelete) return
+
+    setDeletingId(assetToDelete.id)
+    await deleteAsset(assetToDelete.id)
     setDeletingId(null)
+    setIsDeleteModalOpen(false)
+    setAssetToDelete(null)
   }
 
   return (
@@ -58,7 +66,7 @@ export default function AssetList({ assets }: AssetListProps) {
               </svg>
             </Link>
             <button
-              onClick={() => handleDelete(asset.id)}
+              onClick={() => handleDeleteClick(asset)}
               disabled={deletingId === asset.id}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-red-50 active:scale-95 transition-all disabled:opacity-50"
             >
@@ -69,6 +77,46 @@ export default function AssetList({ assets }: AssetListProps) {
           </div>
         </div>
       ))}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setAssetToDelete(null)
+        }}
+        loading={deletingId !== null}
+      >
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Asset?</h2>
+          <p className="text-[#8B7355]">
+            Are you sure you want to delete {assetToDelete?.name}? This action cannot be undone.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setIsDeleteModalOpen(false)
+              setAssetToDelete(null)
+            }}
+            disabled={deletingId !== null}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            disabled={deletingId !== null}
+            className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {deletingId !== null ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

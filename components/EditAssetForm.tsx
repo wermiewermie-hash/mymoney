@@ -9,6 +9,7 @@ import Card from '@/components/Card'
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import { ArrowLeft, Trash2 } from 'lucide-react'
+import Modal from '@/components/Modal'
 
 interface EditAssetFormProps {
   asset: Asset
@@ -327,36 +328,32 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Asset?</h2>
-              <p className="text-[#8B7355]">
-                Are you sure you want to delete {asset.name}? This action cannot be undone.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
-              >
-                Delete
-              </button>
-            </div>
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
+            <span className="text-3xl">⚠️</span>
           </div>
+          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Asset?</h2>
+          <p className="text-[#8B7355]">
+            Are you sure you want to delete {asset.name}? This action cannot be undone.
+          </p>
         </div>
-      )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsDeleteModalOpen(false)}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+          >
+            Delete
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

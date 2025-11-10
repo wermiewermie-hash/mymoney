@@ -10,6 +10,7 @@ import type { Asset, AssetHistory } from '@/lib/types/database.types'
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
+import Modal from '@/components/Modal'
 import { updateAsset, deleteAsset } from '@/app/actions/assets'
 
 // SVG paths for calendar arrows
@@ -875,85 +876,67 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
       </AnimatePresence>
 
       {/* Edit Account Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
-            onClick={() => setIsEditModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 relative"
-            >
-              {/* Delete button in top right */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} loading={loading}>
+        {/* Delete button in top right */}
+        <button
+          onClick={handleDelete}
+          disabled={loading}
+          className="absolute top-6 right-6 p-2 text-[#8B7355] hover:text-[#5C4033] transition-colors disabled:opacity-50"
+          aria-label="Delete account"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
+
+        <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Account</h2>
+
+        <div className="pb-3">
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Account Name</label>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onFocus={handleInputFocus}
+            className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+            placeholder="e.g., Savings Account"
+          />
+        </div>
+
+        <div className="pb-3">
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
+          <div className="grid grid-cols-5 gap-2">
+            {emojiOptions.map((emoji) => (
               <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="absolute top-6 right-6 p-2 text-[#8B7355] hover:text-[#5C4033] transition-colors disabled:opacity-50"
-                aria-label="Delete account"
+                key={emoji}
+                onClick={() => setEditEmoji(emoji)}
+                className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
+                  editEmoji === emoji
+                    ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
+                    : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
+                }`}
               >
-                <Trash2 className="h-5 w-5" />
+                {emoji}
               </button>
+            ))}
+          </div>
+        </div>
 
-              <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Account</h2>
-
-              <div className="pb-3">
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Account Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                  placeholder="e.g., Savings Account"
-                />
-              </div>
-
-              <div className="pb-3">
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {emojiOptions.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => setEditEmoji(emoji)}
-                      className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
-                        editEmoji === emoji
-                          ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
-                          : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  disabled={loading}
-                  className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleEditSave}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setIsEditModalOpen(false)}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditSave}
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

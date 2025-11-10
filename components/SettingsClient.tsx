@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react'
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
+import Modal from '@/components/Modal'
 
 interface Profile {
   id: string
@@ -355,41 +356,37 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Account?</h2>
-              <p className="text-[#8B7355] mb-4">
-                This will permanently delete your account and all associated data. This action cannot be undone.
-              </p>
-              <p className="text-sm text-[#FF6B6B] font-semibold">
-                Are you absolutely sure?
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={loading}
-                className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={loading}
-                className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-              >
-                {loading ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} loading={loading}>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
+            <span className="text-3xl">⚠️</span>
           </div>
+          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Account?</h2>
+          <p className="text-[#8B7355] mb-4">
+            This will permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          <p className="text-sm text-[#FF6B6B] font-semibold">
+            Are you absolutely sure?
+          </p>
         </div>
-      )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsDeleteModalOpen(false)}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

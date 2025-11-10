@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
+import Modal from '@/components/Modal'
 import StarProgress from '@/components/StarProgress'
 import type { GoalHistory } from '@/lib/types/database.types'
 
@@ -394,108 +395,90 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
         </div>
 
         {/* Create Goal Modal */}
-        <AnimatePresence>
-          {isCreateModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
-              onClick={() => !loading && setIsCreateModalOpen(false)}
+        <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} loading={loading}>
+          <h2 className="text-xl font-bold text-[#5C4033]">Create Your Goal</h2>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>
+            <input
+              type="text"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              onFocus={handleInputFocus}
+              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+              placeholder="e.g., Video Game Console"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
+            <div className="grid grid-cols-5 gap-2">
+              {emojiOptions.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => setCreateEmoji(emoji)}
+                  className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
+                    createEmoji === emoji
+                      ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
+                      : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#5C4033] mb-2">Target Amount</label>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={createTarget}
+              onChange={(e) => setCreateTarget(e.target.value)}
+              onFocus={handleInputFocus}
+              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+              placeholder="450"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#5C4033] mb-2">Current Savings (optional)</label>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={createCurrent}
+              onChange={(e) => setCreateCurrent(e.target.value)}
+              onFocus={(e) => {
+                if (e.target.value === '0') {
+                  setCreateCurrent('')
+                }
+                handleInputFocus(e)
+              }}
+              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setIsCreateModalOpen(false)}
+              disabled={loading}
+              className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-              >
-                <h2 className="text-xl font-bold text-[#5C4033]">Create Your Goal</h2>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>
-                  <input
-                    type="text"
-                    value={createName}
-                    onChange={(e) => setCreateName(e.target.value)}
-                    onFocus={handleInputFocus}
-                    className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                    placeholder="e.g., Video Game Console"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {emojiOptions.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setCreateEmoji(emoji)}
-                        className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
-                          createEmoji === emoji
-                            ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
-                            : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#5C4033] mb-2">Target Amount</label>
-                  <input
-                    type="number"
-                    step="1"
-                    inputMode="numeric"
-                    value={createTarget}
-                    onChange={(e) => setCreateTarget(e.target.value)}
-                    onFocus={handleInputFocus}
-                    className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                    placeholder="450"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#5C4033] mb-2">Current Savings (optional)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    inputMode="numeric"
-                    value={createCurrent}
-                    onChange={(e) => setCreateCurrent(e.target.value)}
-                    onFocus={(e) => {
-                      if (e.target.value === '0') {
-                        setCreateCurrent('')
-                      }
-                      handleInputFocus(e)
-                    }}
-                    className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setIsCreateModalOpen(false)}
-                    disabled={loading}
-                    className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateGoal}
-                    disabled={loading || !createName || !createTarget}
-                    className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-                  >
-                    {loading ? 'Creating...' : 'Create'}
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateGoal}
+              disabled={loading || !createName || !createTarget}
+              className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create'}
+            </button>
+          </div>
+        </Modal>
       </div>
     )
   }
@@ -641,201 +624,149 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
       </motion.div>
 
       {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {isDeleteModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4"
-            >
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-                  <span className="text-3xl">⚠️</span>
-                </div>
-                <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Goal?</h2>
-                <p className="text-[#8B7355] mb-4">
-                  Are you sure you want to delete your goal "{goal.name}"? This action cannot be undone.
-                </p>
-              </div>
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} loading={loading}>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Goal?</h2>
+          <p className="text-[#8B7355] mb-4">
+            Are you sure you want to delete your goal "{goal.name}"? This action cannot be undone.
+          </p>
+        </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  disabled={loading}
-                  className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-                >
-                  {loading ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsDeleteModalOpen(false)}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </Modal>
 
       {/* Edit Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
-            onClick={() => setIsEditModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 relative"
-            >
-              {/* Trash Icon in top right corner */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} loading={loading}>
+        {/* Trash Icon in top right corner */}
+        <button
+          onClick={() => {
+            setIsEditModalOpen(false)
+            setIsDeleteModalOpen(true)
+          }}
+          disabled={loading}
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E3F2FD] transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-5 w-5 text-[#5C4033]" />
+        </button>
+
+        <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Goal</h2>
+
+        <div className="pb-3">
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onFocus={handleInputFocus}
+            className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+            placeholder="e.g., Video Game Console"
+          />
+        </div>
+
+        <div className="pb-3">
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
+          <div className="grid grid-cols-5 gap-2">
+            {emojiOptions.map((emoji) => (
               <button
-                onClick={() => {
-                  setIsEditModalOpen(false)
-                  setIsDeleteModalOpen(true)
-                }}
-                disabled={loading}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E3F2FD] transition-colors disabled:opacity-50"
+                key={emoji}
+                onClick={() => setEditEmoji(emoji)}
+                className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
+                  editEmoji === emoji
+                    ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
+                    : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
+                }`}
               >
-                <Trash2 className="h-5 w-5 text-[#5C4033]" />
+                {emoji}
               </button>
+            ))}
+          </div>
+        </div>
 
-              <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Goal</h2>
+        <div className="pb-3">
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Amount</label>
+          <input
+            type="number"
+            step="1"
+            inputMode="numeric"
+            value={editTargetAmount}
+            onChange={(e) => setEditTargetAmount(e.target.value)}
+            onFocus={handleInputFocus}
+            className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+            placeholder="450"
+          />
+        </div>
 
-              <div className="pb-3">
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                  placeholder="e.g., Video Game Console"
-                />
-              </div>
-
-              <div className="pb-3">
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Choose Icon</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {emojiOptions.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => setEditEmoji(emoji)}
-                      className={`aspect-square rounded-2xl text-2xl transition-all flex items-center justify-center ${
-                        editEmoji === emoji
-                          ? 'bg-gradient-to-br from-[#FFA93D] to-[#FFD740] scale-110'
-                          : 'bg-[#E3F2FD] hover:bg-[#D0E8F2]'
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pb-3">
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Amount</label>
-                <input
-                  type="number"
-                  step="1"
-                  inputMode="numeric"
-                  value={editTargetAmount}
-                  onChange={(e) => setEditTargetAmount(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                  placeholder="450"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  disabled={loading}
-                  className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleEditSave}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setIsEditModalOpen(false)}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditSave}
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </Modal>
 
       {/* Update Savings Modal */}
-      <AnimatePresence>
-        {isUpdateModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
-            onClick={() => !loading && setIsUpdateModalOpen(false)}
+      <Modal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} loading={loading}>
+        <h2 className="text-xl font-bold text-[#5C4033]">Update Savings</h2>
+
+        <div>
+          <label className="block text-sm font-semibold text-[#5C4033] mb-2">Current Savings</label>
+          <input
+            type="number"
+            step="1"
+            inputMode="numeric"
+            value={updateAmount}
+            onChange={(e) => setUpdateAmount(e.target.value)}
+            onFocus={handleInputFocus}
+            className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] text-2xl font-bold"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setIsUpdateModalOpen(false)}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
           >
-            <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4"
-            >
-              <h2 className="text-xl font-bold text-[#5C4033]">Update Savings</h2>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#5C4033] mb-2">Current Savings</label>
-                <input
-                  type="number"
-                  step="1"
-                  inputMode="numeric"
-                  value={updateAmount}
-                  onChange={(e) => setUpdateAmount(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] text-2xl font-bold"
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setIsUpdateModalOpen(false)}
-                  disabled={loading}
-                  className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateSave}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Cancel
+          </button>
+          <button
+            onClick={handleUpdateSave}
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

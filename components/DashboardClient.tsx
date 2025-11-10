@@ -80,15 +80,42 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
   // Filter debt out of pie chart data (but keep it for legend)
   const pieChartData = assetBreakdown.filter(item => item.type !== 'debt')
 
-  // Prepare timeline data from snapshots
-  const timelineData = snapshots.slice(-6).map((snapshot, index) => {
-    const date = new Date(snapshot.snapshot_date)
-    const month = date.toLocaleDateString('en-US', { month: 'short' })
-    return {
-      month,
-      value: snapshot.total_net_worth
-    }
-  })
+  // Prepare timeline data - show all history up to 6 months
+  const generateTimelineData = () => {
+    if (snapshots.length === 0) return []
+
+    const today = new Date()
+    const sixMonthsAgo = new Date(today)
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+    // Find the earliest snapshot
+    const earliestSnapshot = snapshots.reduce((earliest, current) => {
+      const currentDate = new Date(current.snapshot_date)
+      const earliestDate = new Date(earliest.snapshot_date)
+      return currentDate < earliestDate ? current : earliest
+    })
+
+    const firstDate = new Date(earliestSnapshot.snapshot_date)
+
+    // Determine cutoff date: if account is newer than 6 months, use first date, otherwise use 6 months ago
+    const cutoffDate = firstDate > sixMonthsAgo ? firstDate : sixMonthsAgo
+
+    // Filter snapshots to only include those after the cutoff date
+    const filteredSnapshots = snapshots.filter(snapshot => {
+      return new Date(snapshot.snapshot_date) >= cutoffDate
+    })
+
+    // Convert to chart format
+    return filteredSnapshots.map(snapshot => {
+      const date = new Date(snapshot.snapshot_date)
+      return {
+        month: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: snapshot.total_net_worth
+      }
+    })
+  }
+
+  const timelineData = generateTimelineData()
 
   // Goal data from database
   const goalCurrent = goal?.current_amount || 0
@@ -300,7 +327,7 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
         ) : (
           <>
             {/* My Progress - Area Chart */}
-            {timelineData.length > 0 && (
+            {snapshots.length > 0 && (
               <Card
                 onViewportEnter={() => setProgressCardInView(true)}
                 viewport={{ once: true, margin: "-100px" }}

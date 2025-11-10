@@ -30,30 +30,16 @@ export async function signUp(formData: FormData) {
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
 
-  const username = formData.get('username') as string
+  const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // Create a service role client to bypass RLS for username lookup
-  const serviceSupabase = await createClient()
-
-  // Look up the email from the username (case-insensitive using ilike)
-  const { data: profile, error: lookupError } = await serviceSupabase
-    .from('profiles')
-    .select('email')
-    .ilike('username', username)
-    .maybeSingle()
-
-  if (lookupError || !profile || !profile.email) {
-    return { error: 'Invalid username or password' }
-  }
-
   const { error } = await supabase.auth.signInWithPassword({
-    email: profile.email,
+    email,
     password,
   })
 
   if (error) {
-    return { error: 'Invalid username or password' }
+    return { error: 'Invalid email or password' }
   }
 
   redirect('/dashboard')
@@ -71,4 +57,32 @@ export async function getUser() {
     data: { user },
   } = await supabase.auth.getUser()
   return user
+}
+
+export async function resetPassword(email: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function updatePassword(newPassword: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
 }
