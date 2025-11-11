@@ -12,9 +12,10 @@ interface StockModalProps {
   isOpen: boolean
   onClose: () => void
   existingShares?: number
+  onSuccess?: () => void
 }
 
-export default function StockModal({ isOpen, onClose, existingShares = 0 }: StockModalProps) {
+export default function StockModal({ isOpen, onClose, existingShares = 0, onSuccess }: StockModalProps) {
   const router = useRouter()
   const { formatCurrency } = useCurrency()
   const [shares, setShares] = useState(existingShares)
@@ -75,8 +76,19 @@ export default function StockModal({ isOpen, onClose, existingShares = 0 }: Stoc
       setError(result.error)
       setLoading(false)
     } else {
-      router.refresh()
-      onClose()
+      console.log('✅ Stock save successful!')
+      setLoading(false)
+      if (onSuccess) {
+        console.log('🎯 Calling onSuccess callback')
+        onSuccess()
+      } else {
+        console.log('⚠️ No onSuccess callback provided')
+      }
+      // Keep modal open and wait for confetti to complete before closing
+      setTimeout(() => {
+        onClose()
+        router.refresh()
+      }, 600)
     }
   }
 
@@ -111,7 +123,7 @@ export default function StockModal({ isOpen, onClose, existingShares = 0 }: Stoc
           </button>
 
           <div className="text-center">
-            <p className="text-[36px] text-[#5c4033] font-semibold leading-none">
+            <p className="font-lora text-[#5c4033] font-semibold leading-none" style={{ fontSize: '36px' }}>
               {shares}
             </p>
           </div>

@@ -147,55 +147,6 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl, b
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <div className="px-6 pt-8 space-y-2">
-          <Link
-            href="/dashboard"
-            onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">💵</span>
-            </div>
-            <span className="text-[18px] font-normal text-[#5C4033]">My Money</span>
-          </Link>
-
-          <Link
-            href="/dashboard/history"
-            onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">📈</span>
-            </div>
-            <span className="text-[18px] font-normal text-[#5C4033]">My Progress</span>
-          </Link>
-
-          <Link
-            href="/dashboard/goals"
-            onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">🎯</span>
-            </div>
-            <span className="text-[18px] font-normal text-[#5C4033]">Goal</span>
-          </Link>
-
-          <Link
-            href="/dashboard/accounts"
-            onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-5 p-2 rounded-2xl hover:bg-[#FFF3E0]/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FFF3E0] to-[#FFE4C4] rounded-3xl flex items-center justify-center shrink-0">
-              <span className="text-xl leading-none">🏦</span>
-            </div>
-            <span className="text-[18px] font-normal text-[#5C4033]">What I own</span>
-          </Link>
-        </div>
-
-        {/* Divider */}
-        <div className="mx-6 mt-8 border-t border-[rgba(0,0,0,0.08)]" />
 
         {/* Settings Options */}
         <div className="px-6 pt-8 space-y-2">

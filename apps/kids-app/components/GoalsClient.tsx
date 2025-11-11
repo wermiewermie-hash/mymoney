@@ -14,6 +14,7 @@ import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
 import StarProgress from '@/components/StarProgress'
 import type { GoalHistory } from '@/lib/types/database.types'
+import { ConfettiEffect } from '@/components/ConfettiEffect'
 
 interface Goal {
   id: string | null
@@ -146,6 +147,7 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isAtTop, setIsAtTop] = useState(true)
   const [celebrateStar, setCelebrateStar] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
 
   // Helper function to scroll input into view on focus
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -349,9 +351,8 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
       alert(result.error)
       setLoading(false)
     } else {
-      setIsCreateModalOpen(false)
       setLoading(false)
-      router.refresh()
+      setShowConfetti(true)
     }
   }
 
@@ -360,7 +361,16 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
   // Zero state - no goal exists
   if (!goal.id) {
     return (
-      <div className="min-h-screen pb-8" style={{ background: pageStyles.goal.background, backgroundAttachment: 'fixed' }}>
+      <>
+        <ConfettiEffect
+          trigger={showConfetti}
+          onComplete={() => {
+            setIsCreateModalOpen(false)
+            setShowConfetti(false)
+            router.refresh()
+          }}
+        />
+        <div className="min-h-screen pb-8" style={{ background: pageStyles.goal.background, backgroundAttachment: 'fixed' }}>
         {/* Header */}
         <div className="px-6 pt-7 pb-0">
           <PageHeader
@@ -496,7 +506,8 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+        </div>
+      </>
     )
   }
 

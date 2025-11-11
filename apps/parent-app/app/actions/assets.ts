@@ -252,10 +252,53 @@ async function createSnapshot() {
 
   const totalNetWorth = await getTotalNetWorth()
 
-  await supabase.from('snapshots').insert({
-    user_id: user.id,
-    total_net_worth: totalNetWorth,
-  })
+  // Get today's date in local timezone as YYYY-MM-DD
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const todayLocal = `${year}-${month}-${day}`
+
+  // Create date string at midnight UTC for database
+  const snapshotDate = `${todayLocal}T00:00:00Z`
+
+  console.log(`💾 Creating snapshot for ${todayLocal} with net worth: $${totalNetWorth}`)
+
+  // Delete ALL existing snapshots for today first (to avoid duplicates)
+  const startOfDay = `${todayLocal}T00:00:00Z`
+  const endOfDay = `${todayLocal}T23:59:59Z`
+
+  const { error: deleteError } = await supabase
+    .from('snapshots')
+    .delete()
+    .eq('user_id', user.id)
+    .gte('snapshot_date', startOfDay)
+    .lte('snapshot_date', endOfDay)
+
+  if (deleteError) {
+    console.error('❌ Error deleting old snapshots:', deleteError)
+  } else {
+    console.log('🗑️  Deleted old snapshots for today')
+  }
+
+  // Always create a fresh snapshot for today
+  console.log('➕ Creating new snapshot')
+  const { error } = await supabase
+    .from('snapshots')
+    .insert({
+      user_id: user.id,
+      snapshot_date: snapshotDate,
+      total_net_worth: totalNetWorth,
+    })
+
+  if (error) {
+    console.error('❌ Error creating snapshot:', error)
+  } else {
+    console.log('✅ Snapshot created successfully')
+  }
+
+  // Revalidate the dashboard to ensure the new snapshot data is fetched
+  revalidatePath('/dashboard')
 }
 
 export async function getSnapshots() {
@@ -276,9 +319,11 @@ export async function getSnapshots() {
     .limit(30) // Last 30 snapshots
 
   if (error) {
-    console.error('Error fetching snapshots:', error)
+    console.error('❌ Error fetching snapshots:', error)
     return []
   }
+
+  console.log('📊 RAW snapshots from database:', JSON.stringify(data, null, 2))
 
   return data || []
 }

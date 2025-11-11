@@ -11,9 +11,10 @@ interface CashModalProps {
   isOpen: boolean
   onClose: () => void
   existingAmount?: number
+  onSuccess?: () => void
 }
 
-export default function CashModal({ isOpen, onClose, existingAmount = 0 }: CashModalProps) {
+export default function CashModal({ isOpen, onClose, existingAmount = 0, onSuccess }: CashModalProps) {
   const router = useRouter()
   const { formatCurrency } = useCurrency()
   const [amount, setAmount] = useState(existingAmount.toString())
@@ -45,8 +46,19 @@ export default function CashModal({ isOpen, onClose, existingAmount = 0 }: CashM
       setError(result.error)
       setLoading(false)
     } else {
-      router.refresh()
-      onClose()
+      console.log('✅ Cash save successful!')
+      setLoading(false)
+      if (onSuccess) {
+        console.log('🎯 Calling onSuccess callback')
+        onSuccess()
+      } else {
+        console.log('⚠️ No onSuccess callback provided')
+      }
+      // Keep modal open and wait for confetti to complete before closing
+      setTimeout(() => {
+        onClose()
+        router.refresh()
+      }, 600)
     }
   }
 

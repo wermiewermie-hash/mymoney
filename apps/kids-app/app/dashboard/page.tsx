@@ -8,6 +8,9 @@ import KidsDashboardClient from '@/components/KidsDashboardClient'
 import PageHeader from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {

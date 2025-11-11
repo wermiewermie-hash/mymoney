@@ -15,6 +15,7 @@ export function ConfettiEffect({ trigger, onComplete }: ConfettiEffectProps) {
   useEffect(() => {
     // Only start if trigger changed from false to true and animation is not already running
     if (trigger && !prevTrigger.current && !animationRunning.current) {
+      console.log('🎉 Confetti triggered!')
       animationRunning.current = true
 
       const duration = 500 // 0.5 seconds
@@ -23,9 +24,16 @@ export function ConfettiEffect({ trigger, onComplete }: ConfettiEffectProps) {
         startVelocity: 30,
         spread: 360,
         ticks: 60,
-        zIndex: 9999,
+        zIndex: 99999,
         disableForReducedMotion: true
       }
+
+      // Fire an initial big burst immediately
+      confetti({
+        ...defaults,
+        particleCount: 100,
+        origin: { x: 0.5, y: 0.5 }
+      })
 
       const interval: NodeJS.Timeout = setInterval(function() {
         const timeLeft = animationEnd - Date.now()
@@ -33,6 +41,7 @@ export function ConfettiEffect({ trigger, onComplete }: ConfettiEffectProps) {
         if (timeLeft <= 0) {
           clearInterval(interval)
           animationRunning.current = false
+          console.log('✅ Confetti complete!')
           if (onComplete) {
             onComplete()
           }

@@ -5,10 +5,11 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { uploadProfilePhoto } from '@/app/actions/profile'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trash2 } from 'lucide-react'
 import PageHeader, { HeaderButton } from '@/components/PageHeader'
 import { pageStyles } from '@/lib/constants/pageStyles'
 import Card from '@/components/Card'
+import { motion, AnimatePresence } from 'motion/react'
 
 interface Profile {
   id: string
@@ -175,6 +176,11 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
               <ArrowLeft className="h-5 w-5" />
             </HeaderButton>
           }
+          rightAction={
+            <HeaderButton onClick={() => setIsDeleteModalOpen(true)} color={pageStyles.settings.buttonColor}>
+              <Trash2 className="h-5 w-5" />
+            </HeaderButton>
+          }
         />
       </div>
 
@@ -240,59 +246,6 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
             />
           </div>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-[#5C4033] mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              onFocus={handleInputFocus}
-              className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-              placeholder="your.email@example.com"
-            />
-          </div>
-
-          {/* Password Change Section */}
-          <div className="pt-4 border-t border-[rgba(0,0,0,0.08)]">
-            <h3 className="text-[#5C4033] font-semibold mb-4">Change Password</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-semibold text-[#5C4033] mb-2">
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                  placeholder="Leave blank to keep current password"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[#5C4033] mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full px-4 py-3 bg-[#E3F2FD] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
-                  placeholder="Confirm new password"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Error/Success Messages */}
           {error && (
             <div className="bg-gradient-to-br from-white to-[#FFEBEE] border-2 border-[#FF6B6B]/20 rounded-2xl p-4">
@@ -331,65 +284,58 @@ export default function SettingsClient({ user, profile }: SettingsClientProps) {
             )}
           </button>
         </Card>
-
-        {/* Delete Account */}
-        <Card className="bg-gradient-to-br from-white to-[#FFEBEE]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full flex items-center justify-center shadow-lg">
-              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-[#5C4033] font-semibold">Danger Zone</h3>
-              <p className="text-sm text-[#8B7355]">Permanently delete your account</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="w-full bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
-          >
-            Delete Account
-          </button>
-        </Card>
       </div>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-                <span className="text-3xl">⚠️</span>
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6"
+            onClick={() => setIsDeleteModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
+                  <span className="text-3xl">⚠️</span>
+                </div>
+                <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Account?</h2>
+                <p className="text-[#8B7355] mb-4">
+                  This will permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <p className="text-sm text-[#FF6B6B] font-semibold">
+                  Are you absolutely sure?
+                </p>
               </div>
-              <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Account?</h2>
-              <p className="text-[#8B7355] mb-4">
-                This will permanently delete your account and all associated data. This action cannot be undone.
-              </p>
-              <p className="text-sm text-[#FF6B6B] font-semibold">
-                Are you absolutely sure?
-              </p>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={loading}
-                className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={loading}
-                className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
-              >
-                {loading ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={loading}
+                  className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+                >
+                  {loading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

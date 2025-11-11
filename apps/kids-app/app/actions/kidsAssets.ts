@@ -124,6 +124,7 @@ export async function upsertGoogleStock(shares: number) {
       .from('assets')
       .update({
         shares,
+        price_per_share: stockPrice.price,
         current_value: currentValue,
         updated_at: new Date().toISOString()
       })
@@ -143,6 +144,7 @@ export async function upsertGoogleStock(shares: number) {
         name: 'Google Stock',
         emoji: '📈',
         shares,
+        price_per_share: stockPrice.price,
         current_value: currentValue
       })
 
@@ -150,6 +152,9 @@ export async function upsertGoogleStock(shares: number) {
       return { error: error.message }
     }
   }
+
+  // Create snapshot after updating assets
+  await createSnapshot()
 
   revalidatePath('/dashboard')
   return { success: true }
@@ -201,6 +206,9 @@ export async function upsertCash(amount: number) {
     }
   }
 
+  // Create snapshot after updating assets
+  await createSnapshot()
+
   revalidatePath('/dashboard')
   return { success: true }
 }
@@ -221,9 +229,75 @@ export async function getSnapshots(): Promise<Snapshot[]> {
     .order('snapshot_date', { ascending: true })
 
   if (error) {
-    console.error('Error fetching snapshots:', error)
+    console.error('❌ Error fetching snapshots:', error)
     return []
   }
 
+  console.log('📊 RAW snapshots from database:', JSON.stringify(data, null, 2))
+
+  // Return raw data - let the client handle formatting
   return data || []
+}
+
+// Create a snapshot of current net worth
+export async function createSnapshot() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Not authenticated' }
+  }
+
+  // Calculate current total net worth
+  const totalNetWorth = await getTotalNetWorth()
+
+  // Get today's date in local timezone as YYYY-MM-DD
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const todayLocal = `${year}-${month}-${day}`
+
+  // Create date string at midnight UTC for database
+  const snapshotDate = `${todayLocal}T00:00:00Z`
+
+  console.log(`💾 Creating snapshot for ${todayLocal} with net worth: $${totalNetWorth}`)
+
+  // Delete ALL existing snapshots for today first (to avoid duplicates)
+  const startOfDay = `${todayLocal}T00:00:00Z`
+  const endOfDay = `${todayLocal}T23:59:59Z`
+
+  const { error: deleteError } = await supabase
+    .from('snapshots')
+    .delete()
+    .eq('user_id', user.id)
+    .gte('snapshot_date', startOfDay)
+    .lte('snapshot_date', endOfDay)
+
+  if (deleteError) {
+    console.error('❌ Error deleting old snapshots:', deleteError)
+  } else {
+    console.log('🗑️  Deleted old snapshots for today')
+  }
+
+  // Always create a fresh snapshot for today
+  console.log('➕ Creating new snapshot')
+  const { error } = await supabase
+    .from('snapshots')
+    .insert({
+      user_id: user.id,
+      snapshot_date: snapshotDate,
+      total_net_worth: totalNetWorth
+    })
+
+  if (error) {
+    console.error('❌ Error creating snapshot:', error)
+    return { error: error.message }
+  }
+  console.log('✅ Snapshot created successfully')
+
+  // Revalidate the dashboard to ensure the new snapshot data is fetched
+  revalidatePath('/dashboard')
+
+  return { success: true }
 }
