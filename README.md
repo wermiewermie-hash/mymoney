@@ -67,3 +67,4 @@ The `shared/` directory is prepared for extracting common components:
 - Supabase client configuration
 # Auto-deploy test - Sun Nov 10 2025
 # Deployment trigger - fixing NEXT_PUBLIC_SITE_URL
+# Deployment trigger - Mon Nov 11 2025 - Gift feature and edit modal fixes
