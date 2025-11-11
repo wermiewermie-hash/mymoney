@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import PasswordResetModal from '../../components/PasswordResetModal'
 import Modal from '@/components/Modal'
 import { createClient } from '@/lib/supabase/client'
+import { Copy, Check } from 'lucide-react'
 
 export default function LoginPage() {
   const [showResetModal, setShowResetModal] = useState(false)
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showBrowserWarning, setShowBrowserWarning] = useState(false)
   const [isEmbeddedBrowser, setIsEmbeddedBrowser] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   // Detect if user is in an embedded browser
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function LoginPage() {
 
   function copyUrl() {
     navigator.clipboard.writeText(window.location.href)
+    setLinkCopied(true)
   }
 
   return (
@@ -180,9 +183,19 @@ export default function LoginPage() {
           </p>
           <button
             onClick={copyUrl}
-            className="w-full bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+            className="w-full bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
           >
-            Copy link
+            {linkCopied ? (
+              <>
+                <Check className="w-5 h-5" />
+                Link copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-5 h-5" />
+                Copy link
+              </>
+            )}
           </button>
         </div>
       </Modal>
