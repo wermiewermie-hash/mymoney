@@ -40,7 +40,7 @@ export default function LoginPage() {
   return (
     <div className="bg-gradient-to-b from-[#ff4e8d] via-[#ff9966] via-50% to-[#ffd93d] min-h-screen relative">
       {/* Header with Title and Illustration */}
-      <div className="flex flex-col gap-[36px] items-center px-[40px] pt-[77px] pb-[38px]">
+      <div className="flex flex-col gap-[36px] items-center px-[40px] pt-[141px] pb-[38px]">
         <p className="font-lora font-semibold text-center text-white w-full" style={{ fontSize: '36px', lineHeight: '42px' }}>
           My Money Kids
         </p>
@@ -55,7 +55,7 @@ export default function LoginPage() {
 
       {/* Login Form Container */}
       <div className="px-[23px] mt-[70px]">
-        <div className="flex flex-col gap-[24px] items-center w-full">
+        <div className="flex flex-col gap-[36px] items-center w-full">
           {/* Google Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
           {/* Info Text */}
           <p className="font-normal text-[14px] leading-[18px] text-[#5c4033] text-center w-full">
-            Sign in with your Google account to get started
+            To get started, sign in with Google
           </p>
         </div>
       </div>
