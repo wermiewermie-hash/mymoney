@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error exchanging code for session:', error)
-      return NextResponse.redirect(new URL('/login?error=auth_callback_error', requestUrl.origin))
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      console.error('Redirect URL origin:', requestUrl.origin)
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin))
     }
 
     return response
