@@ -62,9 +62,13 @@ export async function getUser() {
 export async function resetPassword(email: string) {
   const supabase = await createClient()
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // Use kids app URL for password reset
+  const redirectUrl = process.env.NODE_ENV === 'production'
+    ? 'https://mymoney-gilt-six.vercel.app/auth/callback?next=/reset-password'
+    : 'http://localhost:3000/auth/callback?next=/reset-password'
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+    redirectTo: redirectUrl,
   })
 
   if (error) {
