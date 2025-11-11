@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Sparkles, ChevronRight, Trash2, Pencil } from 'lucide-react'
-import { motion, useMotionValue, useTransform, animate } from 'motion/react'
+import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'motion/react'
 import StarProgress from '@/components/StarProgress'
 import { useCurrency } from '@/lib/context/CurrencyContext'
 import Card from '@/components/Card'
@@ -148,8 +148,8 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
   const [showConfetti, setShowConfetti] = useState(false)
   const [lastUpdatedCard, setLastUpdatedCard] = useState<'stock' | 'cash' | 'goal' | null>(null)
   const [celebrateStar, setCelebrateStar] = useState(false)
-  const [celebrateStock, setCelebrateStock] = useState(false)
-  const [celebrateCash, setCelebrateCash] = useState(false)
+  const [celebrateStock, setCelebrateStock] = useState(0)
+  const [celebrateCash, setCelebrateCash] = useState(0)
   const [editGoalName, setEditGoalName] = useState('')
   const [editGoalEmoji, setEditGoalEmoji] = useState('🎮')
   const [editGoalTarget, setEditGoalTarget] = useState('')
@@ -385,11 +385,13 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       }
       setShowConfetti(true)
 
-      // Trigger star jiggle animation
-      setCelebrateStar(true)
+      // Trigger star jiggle animation after modal closes
       setTimeout(() => {
-        setCelebrateStar(false)
-      }, 1400) // Reset after animation completes (0.7s delay + 0.6s duration + buffer)
+        setCelebrateStar(true)
+        setTimeout(() => {
+          setCelebrateStar(false)
+        }, 1400) // Reset after animation completes (0.7s delay + 0.6s duration + buffer)
+      }, 700)
 
       setTimeout(() => {
         setIsUpdateGoalSavingsModalOpen(false)
@@ -421,11 +423,13 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       }
       setShowConfetti(true)
 
-      // Trigger star jiggle animation
-      setCelebrateStar(true)
+      // Trigger star jiggle animation after card transition completes (0.3s exit + 0.3s enter)
       setTimeout(() => {
-        setCelebrateStar(false)
-      }, 1400) // Reset after animation completes (0.7s delay + 0.6s duration + buffer)
+        setCelebrateStar(true)
+        setTimeout(() => {
+          setCelebrateStar(false)
+        }, 1400) // Reset after animation completes (0.7s delay + 0.6s duration + buffer)
+      }, 700)
 
       setTimeout(() => {
         setIsCreateGoalModalOpen(false)
@@ -670,59 +674,74 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
             )}
           </div>
 
-          {googleStock ? (
-            <>
-              {/* Stock Visual */}
-              <div className="flex items-center justify-center mb-6 px-8 pb-8 pt-[26px] bg-gradient-to-br from-[#52C41A]/10 to-[#389E0D]/10 rounded-2xl">
-                <div className="text-center">
-                  <div className="mb-2 flex justify-center">
-                    <motion.img
-                      src="/stocks.png"
-                      alt="Stocks"
-                      className="w-[80px] h-[80px]"
-                      animate={celebrateStock ? {
-                        rotate: [0, -8, 8, -6, 6, -4, 4, 0]
-                      } : {}}
+          <AnimatePresence mode="wait">
+            {googleStock ? (
+              <motion.div
+                key="stock-populated"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {/* Stock Visual */}
+                <div className="flex items-center justify-center mb-6 px-8 pb-8 pt-[26px] bg-gradient-to-br from-[#52C41A]/10 to-[#389E0D]/10 rounded-2xl">
+                  <div className="text-center">
+                    <motion.div
+                      key={`stock-${celebrateStock}`}
+                      className="mb-2 flex justify-center"
+                      initial={{ rotate: 0 }}
+                      animate={{ rotate: [0, -8, 8, -6, 6, -4, 4, 0] }}
                       transition={{
-                        duration: 0.6,
-                        ease: "easeInOut",
-                        delay: 0.7
+                        duration: 0.8,
+                        ease: "easeInOut"
                       }}
-                    />
+                    >
+                      <img
+                        src="/stocks.png"
+                        alt="Stocks"
+                        className="w-[80px] h-[80px]"
+                      />
+                    </motion.div>
+                    <p className="font-lora text-[#5c4033] font-semibold" style={{ fontSize: '32px', lineHeight: '1' }}>
+                      {googleStock.shares || 0} share{(googleStock.shares || 0) !== 1 ? 's' : ''}
+                    </p>
                   </div>
-                  <p className="font-lora text-[#5c4033] font-semibold" style={{ fontSize: '32px', lineHeight: '1' }}>
-                    {googleStock.shares || 0} share{(googleStock.shares || 0) !== 1 ? 's' : ''}
-                  </p>
                 </div>
-              </div>
 
-              {/* Stock Details */}
-              <div className="flex justify-between items-start px-3 mb-6">
-                <div>
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Total</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(googleStock.current_value)}</p>
+                {/* Stock Details */}
+                <div className="flex justify-between items-start px-3 mb-6">
+                  <div>
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Total</p>
+                    <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(googleStock.current_value)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Share price</p>
+                    <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(googleStock.price_per_share || 0)}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Share price</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(googleStock.price_per_share || 0)}</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="stock-zero"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-center mb-0"
+              >
+                <div className="mb-4 flex justify-center">
+                  <img src="/stocks.png" alt="Stocks" className="w-[160px] h-[160px]" />
                 </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center pt-2 pb-2 mb-0">
-              <div className="mb-4 flex justify-center">
-                <img src="/stocks.png" alt="Stocks" className="w-[160px] h-[160px]" />
-              </div>
-              <p className="text-[#5C4033] mb-6">Add your Google stock</p>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Full-width action button */}
           <button
             onClick={() => setIsStockModalOpen(true)}
             className="w-full bg-gradient-to-b from-[#52C41A] to-[#389E0D] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
-            {googleStock ? 'Update stocks' : 'Add stocks'}
+            {googleStock ? 'Update stocks' : 'Add your stocks'}
           </button>
         </Card>
 
@@ -746,63 +765,78 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
             )}
           </div>
 
-          {cash ? (
-            <>
-              {/* Cash Visual */}
-              <div className="flex items-center justify-center mb-6 px-8 pb-8 pt-[26px] bg-gradient-to-br from-[#0bd2ec]/10 to-[#15acc0]/10 rounded-2xl">
-                <div className="text-center">
-                  <div className="mb-2 flex justify-center">
-                    <motion.img
-                      src="/cash.png"
-                      alt="Cash"
-                      className="w-[80px] h-[80px]"
-                      animate={celebrateCash ? {
-                        rotate: [0, -8, 8, -6, 6, -4, 4, 0]
-                      } : {}}
+          <AnimatePresence mode="wait">
+            {cash ? (
+              <motion.div
+                key="cash-populated"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {/* Cash Visual */}
+                <div className="flex items-center justify-center mb-6 px-8 pb-8 pt-[26px] bg-gradient-to-br from-[#0bd2ec]/10 to-[#15acc0]/10 rounded-2xl">
+                  <div className="text-center">
+                    <motion.div
+                      key={`cash-${celebrateCash}`}
+                      className="mb-2 flex justify-center"
+                      initial={{ rotate: 0 }}
+                      animate={{ rotate: [0, -8, 8, -6, 6, -4, 4, 0] }}
                       transition={{
-                        duration: 0.6,
-                        ease: "easeInOut",
-                        delay: 0.7
+                        duration: 0.8,
+                        ease: "easeInOut"
                       }}
-                    />
+                    >
+                      <img
+                        src="/cash.png"
+                        alt="Cash"
+                        className="w-[80px] h-[80px]"
+                      />
+                    </motion.div>
+                    <p className="font-lora text-[#5c4033] font-semibold" style={{ fontSize: '32px', lineHeight: '1' }}>
+                      {formatCurrency(cash.current_value)}
+                    </p>
                   </div>
-                  <p className="font-lora text-[#5c4033] font-semibold" style={{ fontSize: '32px', lineHeight: '1' }}>
-                    {formatCurrency(cash.current_value)}
-                  </p>
                 </div>
-              </div>
 
-              {/* Cash Details */}
-              <div className="flex justify-between items-start px-3 mb-6">
-                <div>
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>This month</p>
-                  <p className={`${changeThisMonth >= 0 ? 'text-[#52C41A]' : 'text-[#FF6B6B]'}`} style={{ fontSize: '18px', lineHeight: '28px' }}>
-                    {changeThisMonth >= 0 ? '+' : ''}{formatCurrency(changeThisMonth)}
-                  </p>
+                {/* Cash Details */}
+                <div className="flex justify-between items-start px-3 mb-6">
+                  <div>
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>This month</p>
+                    <p className={`${changeThisMonth >= 0 ? 'text-[#52C41A]' : 'text-[#FF6B6B]'}`} style={{ fontSize: '18px', lineHeight: '28px' }}>
+                      {changeThisMonth >= 0 ? '+' : ''}{formatCurrency(changeThisMonth)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>This year</p>
+                    <p className={`${changeThisYear >= 0 ? 'text-[#52C41A]' : 'text-[#FF6B6B]'}`} style={{ fontSize: '18px', lineHeight: '28px' }}>
+                      {changeThisYear >= 0 ? '+' : ''}{formatCurrency(changeThisYear)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>This year</p>
-                  <p className={`${changeThisYear >= 0 ? 'text-[#52C41A]' : 'text-[#FF6B6B]'}`} style={{ fontSize: '18px', lineHeight: '28px' }}>
-                    {changeThisYear >= 0 ? '+' : ''}{formatCurrency(changeThisYear)}
-                  </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="cash-zero"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-center mb-0"
+              >
+                <div className="mb-4 flex justify-center">
+                  <img src="/cash.png" alt="Cash" className="w-[160px] h-[160px]" />
                 </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-8 mb-6">
-              <div className="mb-4 flex justify-center">
-                <img src="/cash.png" alt="Cash" className="w-[160px] h-[160px]" />
-              </div>
-              <p className="text-[#5C4033]">Add your cash</p>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Full-width action button */}
           <button
             onClick={() => setIsCashModalOpen(true)}
             className="w-full bg-gradient-to-b from-[#0bd2ec] to-[#15acc0] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
-            {cash ? 'Update cash' : 'Add cash'}
+            {cash ? 'Update cash' : 'Add your cash'}
           </button>
         </Card>
 
@@ -832,62 +866,75 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
             </div>
           </div>
 
-          {goal ? (
-            <>
-              {/* Goal Visual - Star Progress */}
-              <div className="relative flex items-center justify-center mb-6">
-                <StarProgress progress={goalProgress} size={182} inView={goalCardInView} celebrate={celebrateStar} />
-                {goalProgress >= 100 && (
-                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                    <p className="font-lora text-[#5c4033] font-semibold text-center px-4" style={{ fontSize: '32px', lineHeight: '1.2' }}>
-                      Congrats!<br />You did it!
-                    </p>
+          <AnimatePresence mode="wait">
+            {goal ? (
+              <motion.div
+                key="goal-populated"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {/* Goal Visual - Star Progress */}
+                <div className="relative flex items-center justify-center mb-6">
+                  <StarProgress progress={goalProgress} size={182} inView={goalCardInView} celebrate={celebrateStar} />
+                  {goalProgress >= 100 && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                      <p className="font-lora text-[#5c4033] font-semibold text-center px-4" style={{ fontSize: '32px', lineHeight: '1.2' }}>
+                        Congrats!<br />You did it!
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Goal Details */}
+                <div className="flex justify-between items-start px-3 mb-6">
+                  <div>
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Saved</p>
+                    <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalCurrent)}</p>
                   </div>
-                )}
-              </div>
-
-              {/* Goal Details */}
-              <div className="flex justify-between items-start px-3 mb-6">
-                <div>
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Saved</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalCurrent)}</p>
+                  <div className="text-right">
+                    <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Goal</p>
+                    <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalTarget)}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[#8B7355] mb-1" style={{ fontSize: '14px', lineHeight: '20px' }}>Goal</p>
-                  <p className="text-[#5C4033]" style={{ fontSize: '18px', lineHeight: '28px' }}>{formatCurrency(goalTarget)}</p>
-                </div>
-              </div>
 
-              {/* Update savings button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setUpdateGoalAmount(goalCurrent.toString())
-                  setIsUpdateGoalSavingsModalOpen(true)
-                }}
-                className="w-full bg-gradient-to-b from-[#FFD740] to-[#FFA93D] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                {/* Update savings button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setUpdateGoalAmount(goalCurrent.toString())
+                    setIsUpdateGoalSavingsModalOpen(true)
+                  }}
+                  className="w-full bg-gradient-to-b from-[#FFD740] to-[#FFA93D] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                >
+                  Update savings
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="goal-zero"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                Update savings
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="text-center py-8 mb-6">
-                <div className="mb-4 flex justify-center">
-                  <img src="/goal.png" alt="Goal" className="w-[160px] h-[160px]" />
+                <div className="text-center mb-0">
+                  <div className="mb-4 flex justify-center">
+                    <img src="/goal.png" alt="Goal" className="w-[160px] h-[160px]" />
+                  </div>
                 </div>
-                <p className="text-[#5C4033]">Create your savings goal</p>
-              </div>
 
-              {/* Full-width action button */}
-              <button
-                onClick={() => setIsCreateGoalModalOpen(true)}
-                className="w-full bg-gradient-to-b from-[#FFD740] to-[#FFA93D] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
-              >
-                Set your goal
-              </button>
-            </>
-          )}
+                {/* Full-width action button */}
+                <button
+                  onClick={() => setIsCreateGoalModalOpen(true)}
+                  className="w-full bg-gradient-to-b from-[#FFD740] to-[#FFA93D] text-white font-semibold py-3 rounded-[18px] shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                >
+                  Set your goal
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
       </div>
 
@@ -901,11 +948,11 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           setLastUpdatedCard('stock')
           setShowConfetti(true)
 
-          // Trigger stock jiggle animation
-          setCelebrateStock(true)
+          // Trigger stock jiggle animation after card transition completes (0.3s exit + 0.3s enter)
           setTimeout(() => {
-            setCelebrateStock(false)
-          }, 1400)
+            console.log('🎉 Triggering stock wiggle animation')
+            setCelebrateStock(prev => prev + 1)
+          }, 700)
         }}
       />
 
@@ -919,11 +966,11 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           setLastUpdatedCard('cash')
           setShowConfetti(true)
 
-          // Trigger cash jiggle animation
-          setCelebrateCash(true)
+          // Trigger cash jiggle animation after card transition completes (0.3s exit + 0.3s enter)
           setTimeout(() => {
-            setCelebrateCash(false)
-          }, 1400)
+            console.log('💵 Triggering cash wiggle animation')
+            setCelebrateCash(prev => prev + 1)
+          }, 700)
         }}
       />
 
