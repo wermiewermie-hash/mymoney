@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Sparkles, ChevronRight, Trash2, Pencil } from 'lucide-react'
-import { motion } from 'motion/react'
+import { motion, useMotionValue, useTransform, animate } from 'motion/react'
 import StarProgress from '@/components/StarProgress'
 import { useCurrency } from '@/lib/context/CurrencyContext'
 import Card from '@/components/Card'
@@ -52,6 +52,24 @@ interface KidsDashboardClientProps {
   goal: Goal | null
 }
 
+// Component to display animated net worth value
+function AnimatedNetWorth({ value, formatCurrency }: { value: any, formatCurrency: (n: number) => string }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    const unsubscribe = value.on('change', (latest: number) => {
+      setDisplayValue(Math.round(latest))
+    })
+    return unsubscribe
+  }, [value])
+
+  return (
+    <div className="text-[#5C4033] font-lora font-semibold" style={{ fontSize: '48px', lineHeight: '48px' }}>
+      {formatCurrency(displayValue)}
+    </div>
+  )
+}
+
 export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, snapshots, goal }: KidsDashboardClientProps) {
   const { formatCurrency } = useCurrency()
   const router = useRouter()
@@ -94,7 +112,16 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
   // Track viewport visibility for each card
   const [progressCardInView, setProgressCardInView] = useState(false)
   const [stockCardInView, setStockCardInView] = useState(false)
+  const [cashCardInView, setCashCardInView] = useState(false)
   const [goalCardInView, setGoalCardInView] = useState(false)
+
+  // Track if we've done initial animations
+  const [hasAnimatedStockOnLoad, setHasAnimatedStockOnLoad] = useState(false)
+  const [hasAnimatedCashOnLoad, setHasAnimatedCashOnLoad] = useState(false)
+
+  // Net worth flipboard animation
+  const netWorthMotionValue = useMotionValue(0)
+  const roundedNetWorth = useTransform(netWorthMotionValue, (latest) => Math.round(latest))
 
   // Modal states
   const [isStockModalOpen, setIsStockModalOpen] = useState(false)
@@ -127,6 +154,37 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       console.log('🎊 Dashboard: showConfetti is TRUE')
     }
   }, [showConfetti])
+
+  // Animate net worth number on mount (flipboard effect)
+  useEffect(() => {
+    // Start from a value close to the target to animate just the last 2 digits
+    const startValue = Math.max(0, totalNetWorth - (Math.random() * 50 + 20))
+    netWorthMotionValue.set(startValue)
+
+    const controls = animate(netWorthMotionValue, totalNetWorth, {
+      duration: 0.6,
+      ease: [0.45, 0.05, 0.55, 0.95] // gentler easing
+    })
+    return controls.stop
+  }, [totalNetWorth, netWorthMotionValue])
+
+  // Trigger jiggle animation for stock image on first appear
+  useEffect(() => {
+    if (stockCardInView && googleStock && !hasAnimatedStockOnLoad) {
+      setHasAnimatedStockOnLoad(true)
+      setCelebrateStock(true)
+      setTimeout(() => setCelebrateStock(false), 1400)
+    }
+  }, [stockCardInView, googleStock, hasAnimatedStockOnLoad])
+
+  // Trigger jiggle animation for cash image on first appear
+  useEffect(() => {
+    if (cashCardInView && cash && !hasAnimatedCashOnLoad) {
+      setHasAnimatedCashOnLoad(true)
+      setCelebrateCash(true)
+      setTimeout(() => setCelebrateCash(false), 1400)
+    }
+  }, [cashCardInView, cash, hasAnimatedCashOnLoad])
 
   // Prepare timeline data - show all history up to 6 months
   const generateTimelineData = () => {
@@ -481,7 +539,7 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
 
           <div className="absolute bottom-0 h-[170px] left-0 rounded-[24px] w-full border-[0.592px] border-[rgba(0,0,0,0.1)] border-solid shadow-[0px_8px_8px_0px_rgba(0,0,0,0.14)]" style={{ backgroundImage: 'linear-gradient(rgb(255, 255, 255) 0%, rgb(255, 248, 225) 100%)' }}>
             <div className="text-center pt-[79px] pb-6">
-              <div className="text-[#5C4033] font-lora font-semibold" style={{ fontSize: '48px', lineHeight: '48px' }}>{formatCurrency(totalNetWorth)}</div>
+              <AnimatedNetWorth value={roundedNetWorth} formatCurrency={formatCurrency} />
             </div>
           </div>
 
@@ -638,7 +696,11 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
         </Card>
 
         {/* Cash Card */}
-        <Card ref={cashCardRef}>
+        <Card
+          ref={cashCardRef}
+          onViewportEnter={() => setCashCardInView(true)}
+          viewport={{ once: true, margin: "-100px" }}
+        >
           <div className="flex items-center justify-between py-2 mb-4">
             <h3 className="text-[#5C4033] font-semibold" style={{ fontSize: '18px', lineHeight: '28px' }}>
               Cash

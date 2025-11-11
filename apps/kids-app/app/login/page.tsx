@@ -42,7 +42,7 @@ export default function LoginPage() {
       {/* Header with Title and Illustration */}
       <div className="flex flex-col gap-[36px] items-center px-[40px] pt-[141px] pb-[38px]">
         <p className="font-lora font-semibold text-center text-white w-full" style={{ fontSize: '36px', lineHeight: '42px' }}>
-          My Money Kids
+          My Money <span style={{ color: '#ffd93d' }}>Kids</span>
         </p>
         <div className="w-[300px] flex items-center justify-center">
           <img
