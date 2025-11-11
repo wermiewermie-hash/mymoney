@@ -54,15 +54,14 @@ export default function LoginPage() {
       </div>
 
       {/* Login Form Container */}
-      <div className="px-[23px] -mt-[12px]">
+      <div className="px-[23px] mt-[70px]">
         <div className="flex flex-col gap-[24px] items-center w-full">
           {/* Google Sign In Button */}
-          <div className="kids-card w-full">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
-              className="bg-white h-[64px] rounded-[18px] shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] w-full text-[#5c4033] font-semibold text-[18px] leading-[28px] flex items-center justify-center gap-3 hover:scale-[1.005] active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed border-2 border-[#5c4033]/10"
-            >
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={loading || googleLoading}
+            className="bg-white h-[64px] rounded-[18px] shadow-[0px_2px_3px_3px_rgba(0,0,0,0.1)] w-full text-[#5c4033] font-semibold text-[18px] leading-[28px] flex items-center justify-center gap-3 hover:scale-[1.005] active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed border-2 border-[#5c4033]/10"
+          >
               {googleLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -83,7 +82,6 @@ export default function LoginPage() {
                 </>
               )}
             </button>
-          </div>
 
           {/* Info Text */}
           <p className="font-normal text-[14px] leading-[18px] text-[#5c4033] text-center w-full">
