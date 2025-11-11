@@ -2,7 +2,7 @@
 
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PasswordResetModal from '../../components/PasswordResetModal'
 import { createClient } from '@/lib/supabase/client'
 
@@ -12,6 +12,32 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showBrowserWarning, setShowBrowserWarning] = useState(false)
+  const [isEmbeddedBrowser, setIsEmbeddedBrowser] = useState(false)
+
+  // Detect if user is in an embedded browser
+  useEffect(() => {
+    const ua = navigator.userAgent || navigator.vendor || (window as any).opera
+    const isEmbedded =
+      // Instagram
+      ua.includes('Instagram') ||
+      // Facebook
+      ua.includes('FBAN') || ua.includes('FBAV') ||
+      // Line (multiple patterns)
+      ua.includes('Line') || ua.includes('LINE') || /Line\/[\d.]+/.test(ua) ||
+      // Twitter
+      ua.includes('Twitter') ||
+      // TikTok
+      ua.includes('BytedanceWebview') ||
+      // WeChat
+      ua.includes('MicroMessenger') ||
+      // LinkedIn
+      ua.includes('LinkedInApp') ||
+      // Snapchat
+      ua.includes('Snapchat')
+
+    setIsEmbeddedBrowser(isEmbedded)
+  }, [])
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -23,6 +49,12 @@ export default function LoginPage() {
   }
 
   async function handleGoogleSignIn() {
+    // Check if in embedded browser
+    if (isEmbeddedBrowser) {
+      setShowBrowserWarning(true)
+      return
+    }
+
     setGoogleLoading(true)
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
@@ -35,6 +67,11 @@ export default function LoginPage() {
       console.error('Google sign-in error:', error)
       setGoogleLoading(false)
     }
+  }
+
+  function copyUrl() {
+    navigator.clipboard.writeText(window.location.href)
+    alert('Link copied! Now paste it in Safari or Chrome.')
   }
 
   return (
@@ -52,6 +89,29 @@ export default function LoginPage() {
           />
         </div>
       </div>
+
+      {/* Browser Warning Banner */}
+      {(isEmbeddedBrowser || showBrowserWarning) && (
+        <div className="px-[23px] mb-4">
+          <div className="bg-white rounded-[24px] p-6 shadow-lg border-2 border-[#ff9933]">
+            <h3 className="text-[#5c4033] font-bold text-[16px] mb-2">⚠️ Open in Browser Required</h3>
+            <p className="text-[#5c4033] text-[14px] mb-4">
+              Google sign-in doesn't work in this app browser. Please open this page in Safari or Chrome.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={copyUrl}
+                className="bg-gradient-to-b from-[#52c41a] to-[#389e0d] h-[48px] rounded-[12px] text-white font-semibold"
+              >
+                Copy Link & Open in Browser
+              </button>
+              <p className="text-[#8b7355] text-[12px] text-center">
+                Tap ⋯ (three dots) at the top → "Open in Safari/Chrome"
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Login Form Container */}
       <div className="px-[23px] mt-[70px]">
