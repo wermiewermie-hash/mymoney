@@ -59,35 +59,5 @@ export async function getUser() {
   return user
 }
 
-export async function resetPassword(email: string) {
-  const supabase = await createClient()
-
-  // Redirect directly to reset-password page (not callback) to avoid PKCE issues
-  const redirectUrl = process.env.NODE_ENV === 'production'
-    ? 'https://mymoney-gilt-six.vercel.app/reset-password'
-    : 'http://localhost:3000/reset-password'
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: redirectUrl,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  return { success: true }
-}
-
-export async function updatePassword(newPassword: string) {
-  const supabase = await createClient()
-
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  return { success: true }
-}
+// Password reset is now handled through the parent app's unified flow
+// See shared/components/PasswordResetModal.tsx

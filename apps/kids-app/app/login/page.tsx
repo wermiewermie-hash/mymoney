@@ -3,44 +3,20 @@
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
 import { useState } from 'react'
+import PasswordResetModal from '../../../../shared/components/PasswordResetModal'
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
-  const [resetLoading, setResetLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
-    setError(null)
     const result = await signIn(formData)
     if (result?.error) {
-      setError(result.error)
+      setShowResetModal(true)
       setLoading(false)
-    }
-  }
-
-  async function handlePasswordReset() {
-    if (!email) {
-      setError('Please enter your email address first')
-      return
-    }
-
-    setResetLoading(true)
-    setError(null)
-
-    const { resetPassword } = await import('@/app/actions/auth')
-    const result = await resetPassword(email)
-
-    setResetLoading(false)
-
-    if (result?.error) {
-      setError(result.error)
-    } else {
-      setResetSent(true)
-      setTimeout(() => setResetSent(false), 5000)
     }
   }
 
@@ -100,34 +76,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {resetSent && (
-                <div className="bg-gradient-to-br from-white to-[#E8F5E9] border-2 border-[#52C41A]/20 rounded-2xl p-4">
-                  <div className="flex gap-3 items-start">
-                    <span className="text-2xl shrink-0">✅</span>
-                    <p className="text-[#52C41A] font-medium">Password reset email sent! Check your inbox.</p>
-                  </div>
-                </div>
-              )}
-
-              {error && (
-                <div className="bg-gradient-to-br from-white to-[#FFEBEE] border-2 border-[#FF6B6B]/20 rounded-2xl p-4">
-                  <div className="flex gap-3 items-start">
-                    <span className="text-2xl shrink-0">⚠️</span>
-                    <div className="flex-1">
-                      <p className="text-[#FF6B6B] font-medium">{error}</p>
-                      <button
-                        type="button"
-                        onClick={handlePasswordReset}
-                        disabled={resetLoading}
-                        className="text-[#5C4033] font-semibold text-sm mt-2 underline hover:opacity-80 disabled:opacity-50 transition-opacity"
-                      >
-                        {resetLoading ? 'Sending...' : 'Forgot your password? Reset it through email.'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Login Button */}
               <button
                 type="submit"
@@ -161,6 +109,13 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        email={email}
+      />
     </div>
   )
 }
