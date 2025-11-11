@@ -65,4 +65,5 @@ The `shared/` directory is prepared for extracting common components:
 - Color schemes and design tokens
 - Authentication utilities
 - Supabase client configuration
-# Auto-deploy test - Mon Nov 10 17:03:38 PST 2025
+# Auto-deploy test - Sun Nov 10 2025
+# Deployment trigger - fixing NEXT_PUBLIC_SITE_URL
