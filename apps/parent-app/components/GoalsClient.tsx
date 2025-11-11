@@ -626,12 +626,9 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
       {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} loading={loading}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-            <span className="text-3xl">⚠️</span>
-          </div>
-          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Goal?</h2>
-          <p className="text-[#8B7355] mb-4">
-            Are you sure you want to delete your goal "{goal.name}"? This action cannot be undone.
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete {goal.name}?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
           </p>
         </div>
 
@@ -646,28 +643,29 @@ export default function GoalsClient({ goal: initialGoal, goalHistory }: GoalsCli
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+            className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95 disabled:opacity-50"
           >
-            {loading ? 'Deleting...' : 'Delete'}
+            {loading ? 'Deleting...' : 'Yes, delete'}
           </button>
         </div>
       </Modal>
 
       {/* Edit Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} loading={loading}>
-        {/* Trash Icon in top right corner */}
-        <button
-          onClick={() => {
-            setIsEditModalOpen(false)
-            setIsDeleteModalOpen(true)
-          }}
-          disabled={loading}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#E3F2FD] transition-colors disabled:opacity-50"
-        >
-          <Trash2 className="h-5 w-5 text-[#5C4033]" />
-        </button>
-
-        <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Goal</h2>
+        {/* Header with trash icon */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-[#5C4033]">Edit Goal</h2>
+          <button
+            onClick={() => {
+              setIsEditModalOpen(false)
+              setIsDeleteModalOpen(true)
+            }}
+            disabled={loading}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 active:scale-95 transition-all disabled:opacity-50"
+          >
+            <Trash2 className="w-5 h-5 text-[#FF6B6B]" />
+          </button>
+        </div>
 
         <div className="pb-3">
           <label className="block text-sm font-semibold text-[#5C4033] mb-2">Goal Name</label>

@@ -31,6 +31,7 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
   const [asset, setAsset] = useState(initialAsset)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isAtTop, setIsAtTop] = useState(true)
 
@@ -190,11 +191,11 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
     setLoading(false)
   }
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
-      return
-    }
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true)
+  }
 
+  const confirmDelete = async () => {
     setLoading(true)
     const result = await deleteAsset(asset.id)
 
@@ -204,6 +205,10 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
     } else {
       router.push('/dashboard/accounts')
     }
+  }
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false)
   }
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -934,6 +939,33 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
             className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={handleCancelDelete} loading={loading}>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete {asset.name}?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={handleCancelDelete}
+            disabled={loading}
+            className="flex-1 bg-[#E0E0E0] text-[#5C4033] font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#D0D0D0] active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            disabled={loading}
+            className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95 disabled:opacity-50"
+          >
+            {loading ? 'Deleting...' : 'Yes, delete'}
           </button>
         </div>
       </Modal>

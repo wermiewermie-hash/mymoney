@@ -930,15 +930,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       {/* Delete Stock Modal */}
       <Modal isOpen={isDeleteStockModalOpen} onClose={() => setIsDeleteStockModalOpen(false)} loading={deleteLoading}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#52C41A] to-[#389E0D] rounded-full mb-4 shadow-lg">
-            <span className="text-3xl">⚠️</span>
-          </div>
-          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Google Stock?</h2>
-          <p className="text-[#8B7355] mb-4">
-            This will permanently delete your Google stock information. This action cannot be undone.
-          </p>
-          <p className="text-sm text-[#52C41A] font-semibold">
-            Are you sure?
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete Google Stock?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
           </p>
         </div>
 
@@ -960,9 +954,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           <button
             onClick={handleDeleteStock}
             disabled={deleteLoading}
-            className="flex-1 bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+            className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95 disabled:opacity-50"
           >
-            {deleteLoading ? 'Deleting...' : 'Delete'}
+            {deleteLoading ? 'Deleting...' : 'Yes, delete'}
           </button>
         </div>
       </Modal>
@@ -970,15 +964,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       {/* Delete Cash Modal */}
       <Modal isOpen={isDeleteCashModalOpen} onClose={() => setIsDeleteCashModalOpen(false)} loading={deleteLoading}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#0bd2ec] to-[#15acc0] rounded-full mb-4 shadow-lg">
-            <span className="text-3xl">⚠️</span>
-          </div>
-          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Cash?</h2>
-          <p className="text-[#8B7355] mb-4">
-            This will permanently delete your cash information. This action cannot be undone.
-          </p>
-          <p className="text-sm text-[#0bd2ec] font-semibold">
-            Are you sure?
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete Cash?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
           </p>
         </div>
 
@@ -1000,9 +988,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           <button
             onClick={handleDeleteCash}
             disabled={deleteLoading}
-            className="flex-1 bg-gradient-to-r from-[#0bd2ec] to-[#15acc0] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+            className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95 disabled:opacity-50"
           >
-            {deleteLoading ? 'Deleting...' : 'Delete'}
+            {deleteLoading ? 'Deleting...' : 'Yes, delete'}
           </button>
         </div>
       </Modal>
@@ -1234,15 +1222,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
       {/* Delete Goal Modal */}
       <Modal isOpen={isDeleteGoalModalOpen} onClose={() => setIsDeleteGoalModalOpen(false)} loading={deleteLoading}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FFD740] to-[#FFA93D] rounded-full mb-4 shadow-lg">
-            <span className="text-3xl">⚠️</span>
-          </div>
-          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Goal?</h2>
-          <p className="text-[#8B7355] mb-4">
-            This will permanently delete your savings goal. This action cannot be undone.
-          </p>
-          <p className="text-sm text-[#FFA93D] font-semibold">
-            Are you sure?
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete Goal?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
           </p>
         </div>
 
@@ -1264,9 +1246,9 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           <button
             onClick={handleDeleteGoal}
             disabled={deleteLoading}
-            className="flex-1 bg-gradient-to-r from-[#FFD740] to-[#FFA93D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50"
+            className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95 disabled:opacity-50"
           >
-            {deleteLoading ? 'Deleting...' : 'Delete'}
+            {deleteLoading ? 'Deleting...' : 'Yes, delete'}
           </button>
         </div>
       </Modal>

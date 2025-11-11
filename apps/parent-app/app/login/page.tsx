@@ -5,8 +5,18 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import PasswordResetModal from '../../components/PasswordResetModal'
 import Modal from '@/components/Modal'
+import Card from '@/components/Card'
 import { createClient } from '@/lib/supabase/client'
 import { Copy, Check } from 'lucide-react'
+
+// ============================================================================
+// LOCAL TESTING EMAIL/PASSWORD SIGN IN - DO NOT DELETE THIS CODE
+// ============================================================================
+// Toggle this constant for local testing - set to true to show email/password sign in
+// Set to false for production to hide the email/password card
+// This card took significant effort to style correctly - keep it for future testing needs
+const SHOW_EMAIL_PASSWORD_LOGIN = false
+// ============================================================================
 
 export default function LoginPage() {
   const [showResetModal, setShowResetModal] = useState(false)
@@ -17,6 +27,7 @@ export default function LoginPage() {
   const [showBrowserWarning, setShowBrowserWarning] = useState(false)
   const [isEmbeddedBrowser, setIsEmbeddedBrowser] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Detect if user is in an embedded browser
   useEffect(() => {
@@ -42,11 +53,14 @@ export default function LoginPage() {
     setIsEmbeddedBrowser(isEmbedded)
   }, [])
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setLoading(true)
+    setError(null)
+    const formData = new FormData(e.currentTarget)
     const result = await signIn(formData)
     if (result?.error) {
-      setShowResetModal(true)
+      setError(result.error)
       setLoading(false)
     }
   }
@@ -95,7 +109,7 @@ export default function LoginPage() {
 
 
       {/* Login Form Container */}
-      <div className="px-[23px] mt-[70px]">
+      <div className="px-[23px] mt-[70px] pb-[48px]">
         <div className="flex flex-col gap-[36px] items-center w-full">
           {/* Google Sign In Button */}
           <button
@@ -124,9 +138,65 @@ export default function LoginPage() {
               )}
             </button>
 
+          {/* ========================================================================
+              EMAIL/PASSWORD SIGN IN CARD - DO NOT DELETE
+              ========================================================================
+              This email/password sign in card is for local testing purposes.
+              It is properly styled with the Card component, correct spacing (24px),
+              labels, light yellow input backgrounds, and orange gradient button.
+              Toggle visibility with SHOW_EMAIL_PASSWORD_LOGIN constant above.
+              ======================================================================== */}
+          {SHOW_EMAIL_PASSWORD_LOGIN && (
+            <>
+              {/* OR Divider */}
+              <div className="flex items-center gap-4 w-full">
+                <div className="flex-1 h-[1px] bg-[#5c4033]/20"></div>
+                <span className="text-[#5c4033]/60 font-semibold">OR</span>
+                <div className="flex-1 h-[1px] bg-[#5c4033]/20"></div>
+              </div>
+
+              <Card className="w-full space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#5C4033] mb-2">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="your.email@example.com"
+                      required
+                      className="w-full px-4 py-3 bg-[#FFF4E6] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#5C4033] mb-2">Password</label>
+                    <input
+                      type="password"
+                      name="password"
+                      placeholder="Enter your password"
+                      required
+                      className="w-full px-4 py-3 bg-[#FFF4E6] border-0 rounded-2xl focus:ring-2 focus:ring-[#FF9933] text-[#5C4033] placeholder-[#8B7355]"
+                    />
+                  </div>
+                  {error && (
+                    <p className="text-red-500 text-sm text-center">{error}</p>
+                  )}
+                  <div className="pt-3">
+                    <button
+                      type="submit"
+                      disabled={loading || googleLoading}
+                      className="w-full bg-gradient-to-r from-[#FFA93D] to-[#FF9933] text-white font-bold py-4 px-6 rounded-[18px] transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Signing in...' : 'Sign in with Email'}
+                    </button>
+                  </div>
+                </form>
+              </Card>
+            </>
+          )}
+
           {/* Info Text */}
           <p className="font-normal text-[14px] leading-[18px] text-[#5c4033] text-center w-full">
-            To get started, sign in with Google
+            To sign up, just sign in with Google
           </p>
         </div>
       </div>

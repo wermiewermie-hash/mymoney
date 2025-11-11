@@ -214,12 +214,9 @@ export default function EditAssetModal({ asset, isOpen, onClose, onSuccess }: Ed
       {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#FF6B6B] to-[#FF5252] rounded-full mb-4 shadow-lg">
-            <Trash2 className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-[#5C4033] mb-2">Delete Asset?</h2>
-          <p className="text-[#8B7355] mb-6">
-            Are you sure you want to delete "{asset.name}"? This action cannot be undone.
+          <h2 className="text-xl font-bold text-[#FF6B6B] mb-4">Delete {asset.name}?</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            This will be permanent and can't be undone.
           </p>
           <div className="flex gap-3">
             <button
@@ -230,9 +227,9 @@ export default function EditAssetModal({ asset, isOpen, onClose, onSuccess }: Ed
             </button>
             <button
               onClick={handleDelete}
-              className="flex-1 bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+              className="flex-1 bg-[#FF6B6B] text-white font-bold py-3 px-6 rounded-2xl transition-all hover:bg-[#FF5252] active:scale-95"
             >
-              Delete
+              Yes, delete
             </button>
           </div>
         </div>
