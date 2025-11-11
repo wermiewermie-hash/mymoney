@@ -97,42 +97,6 @@ export default function LoginPage() {
       {/* Login Form Container */}
       <div className="px-[23px] mt-[70px]">
         <div className="flex flex-col gap-[36px] items-center w-full">
-          {/* Email/Password Form - Temporary for local testing */}
-          <div className="w-full bg-white rounded-[24px] p-6 shadow-lg">
-            <form action={handleSubmit} className="flex flex-col gap-[16px]">
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-[rgba(255,149,0,0.1)] h-[48px] rounded-[12px] w-full px-4 font-semibold text-[14px] text-[#5c4033] outline-none"
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-[rgba(255,149,0,0.1)] h-[48px] rounded-[12px] w-full px-4 font-semibold text-[14px] text-[#5c4033] outline-none"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-b from-[#ffc107] to-[#ffa000] h-[48px] rounded-[12px] text-white font-semibold"
-              >
-                {loading ? 'Logging in...' : 'Quick Login'}
-              </button>
-            </form>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 w-full">
-            <div className="flex-1 h-[2px] bg-[#5c4033]/20"></div>
-            <span className="font-semibold text-[12px] text-[#5c4033]/60">OR</span>
-            <div className="flex-1 h-[2px] bg-[#5c4033]/20"></div>
-          </div>
-
           {/* Google Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
