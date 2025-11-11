@@ -4,6 +4,7 @@ import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import PasswordResetModal from '../../components/PasswordResetModal'
+import Modal from '@/components/Modal'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -71,7 +72,7 @@ export default function LoginPage() {
 
   function copyUrl() {
     navigator.clipboard.writeText(window.location.href)
-    alert('Link copied! Now paste it in Safari or Chrome.')
+    alert('Link copied! Now open Safari or Chrome and paste the link.')
   }
 
   return (
@@ -90,28 +91,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Browser Warning Banner */}
-      {(isEmbeddedBrowser || showBrowserWarning) && (
-        <div className="px-[23px] mb-4">
-          <div className="bg-white rounded-[24px] p-6 shadow-lg border-2 border-[#ff9933]">
-            <h3 className="text-[#5c4033] font-bold text-[16px] mb-2">⚠️ Open in Browser Required</h3>
-            <p className="text-[#5c4033] text-[14px] mb-4">
-              Google sign-in doesn't work in this app browser. Please open this page in Safari or Chrome.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={copyUrl}
-                className="bg-gradient-to-b from-[#52c41a] to-[#389e0d] h-[48px] rounded-[12px] text-white font-semibold"
-              >
-                Copy Link & Open in Browser
-              </button>
-              <p className="text-[#8b7355] text-[12px] text-center">
-                Tap ⋯ (three dots) at the top → "Open in Safari/Chrome"
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Login Form Container */}
       <div className="px-[23px] mt-[70px]">
@@ -192,6 +171,22 @@ export default function LoginPage() {
         onClose={() => setShowResetModal(false)}
         email={email}
       />
+
+      {/* Browser Warning Modal */}
+      <Modal isOpen={isEmbeddedBrowser || showBrowserWarning} onClose={() => setShowBrowserWarning(false)}>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-[#5C4033] mb-4">Sign in on browser</h2>
+          <p className="text-[#5C4033] text-[14px] mb-6">
+            Copy the link below and open this app on a browser (like Chrome or Safari).
+          </p>
+          <button
+            onClick={copyUrl}
+            className="w-full bg-gradient-to-r from-[#52C41A] to-[#389E0D] text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95"
+          >
+            Copy link
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
