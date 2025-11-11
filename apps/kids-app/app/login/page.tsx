@@ -72,7 +72,6 @@ export default function LoginPage() {
 
   function copyUrl() {
     navigator.clipboard.writeText(window.location.href)
-    alert('Link copied! Now open Safari or Chrome and paste the link.')
   }
 
   return (
