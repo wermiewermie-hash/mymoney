@@ -21,12 +21,25 @@ export default function ResetPasswordPage() {
       try {
         const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
+
+        // Check for hash fragments (Supabase puts tokens in URL hash after email verification)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+
+        // If tokens are in URL, Supabase client will automatically use them
+        // Wait a bit for the client to process the hash
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error || !session) {
+          console.error('Session error:', error)
+          console.error('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken })
           setError('Invalid or expired reset link. Please request a new password reset.')
         }
       } catch (err) {
+        console.error('Verify session error:', err)
         setError('Invalid or expired reset link. Please request a new password reset.')
       } finally {
         setIsVerifying(false)
