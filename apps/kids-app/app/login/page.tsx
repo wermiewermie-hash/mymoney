@@ -3,7 +3,7 @@
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
 import { useState } from 'react'
-import PasswordResetModal from '../../../../shared/components/PasswordResetModal'
+import PasswordResetModal from '../../components/PasswordResetModal'
 
 export default function LoginPage() {
   const [showResetModal, setShowResetModal] = useState(false)
