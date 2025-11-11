@@ -10,6 +10,7 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void
   exchangeRate: number
   formatCurrency: (amount: number) => string
+  getCurrencySymbol: () => string
   isLoadingRate: boolean
 }
 
@@ -77,8 +78,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const getCurrencySymbol = (): string => {
+    return currency === 'USD' ? '$' : '¥'
+  }
+
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, exchangeRate, formatCurrency, isLoadingRate }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, exchangeRate, formatCurrency, getCurrencySymbol, isLoadingRate }}>
       {children}
     </CurrencyContext.Provider>
   )

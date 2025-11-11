@@ -37,7 +37,7 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ totalNetWorth, assets, snapshots, goal, hasSeenWelcome }: DashboardClientProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, getCurrencySymbol, currency, exchangeRate } = useCurrency()
   const router = useRouter()
   const [showCarousel, setShowCarousel] = useState(!hasSeenWelcome)
 
@@ -334,16 +334,16 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
                 viewport={{ once: true, margin: "-100px" }}
               >
                 <div
-                  className="flex items-center justify-between py-2 mb-6 cursor-pointer"
+                  className="flex items-center justify-between py-2 mb-[18px] cursor-pointer"
                   onClick={() => router.push('/dashboard/history')}
                 >
                   <h3 className="text-[#5C4033] font-semibold" style={{ fontSize: '18px', lineHeight: '28px' }}>My Progress</h3>
                   <ChevronRight className="w-5 h-5 text-[#1E1E1E]" />
                 </div>
 
-                <div className="h-[216px] py-3 mb-6 outline-none [&_*]:outline-none">
+                <div className="h-[216px] pt-0 pb-3 mb-2 outline-none [&_*]:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={timelineData}>
+                    <AreaChart data={timelineData} margin={{ left: 0, right: 0, top: 5, bottom: 5 }} key={currency}>
                       <defs>
                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#52C41A" stopOpacity={0.3}/>
@@ -354,22 +354,94 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
                         dataKey="month"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '#8B7355', fontSize: 12 }}
+                        tick={(props: any) => {
+                          const { x, y, payload, index } = props
+                          const isFirst = index === 0
+                          const isLast = index === timelineData.length - 1
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              dy={16}
+                              fill="#8B7355"
+                              fontSize={12}
+                              textAnchor={isFirst ? 'start' : isLast ? 'end' : 'middle'}
+                            >
+                              {payload.value}
+                            </text>
+                          )
+                        }}
+                        interval="preserveStartEnd"
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: '#8B7355', fontSize: 12 }}
-                        width={40}
+                        width={35}
+                        tickFormatter={(usdValue) => {
+                          // Convert to JPY if needed
+                          const value = currency === 'JPY' ? usdValue * exchangeRate : usdValue
+                          if (value === 0) return '0'
+                          const absValue = Math.abs(value)
+
+                          if (absValue >= 1000000) {
+                            const millions = value / 1000000
+                            if (absValue >= 100000000) return `${Math.round(millions)}M`
+                            if (absValue >= 10000000) return `${millions.toFixed(1)}M`
+                            return `${millions.toFixed(1)}M`
+                          } else if (absValue >= 1000) {
+                            const thousands = value / 1000
+                            if (absValue >= 100000) return `${Math.round(thousands)}k`
+                            return `${thousands.toFixed(1)}k`
+                          } else {
+                            return `${Math.round(value / 10) * 10}`
+                          }
+                        }}
                       />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#fff',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const usdValue = payload[0].value as number
+                            const date = payload[0].payload.month
+
+                            // Convert to JPY if needed
+                            const value = currency === 'JPY' ? usdValue * exchangeRate : usdValue
+                            const absValue = Math.abs(value)
+                            let formatted = ''
+
+                            if (absValue >= 1000000) {
+                              const millions = value / 1000000
+                              if (absValue >= 100000000) {
+                                formatted = `${getCurrencySymbol()}${millions.toFixed(1)}M`
+                              } else {
+                                formatted = `${getCurrencySymbol()}${millions.toFixed(2)}M`
+                              }
+                            } else if (absValue >= 1000) {
+                              const thousands = value / 1000
+                              formatted = `${getCurrencySymbol()}${thousands.toFixed(1)}k`
+                            } else {
+                              formatted = `${getCurrencySymbol()}${Math.round(value).toLocaleString('en-US')}`
+                            }
+
+                            return (
+                              <div style={{
+                                backgroundColor: '#fff',
+                                border: 'none',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                padding: '8px 12px'
+                              }}>
+                                <p style={{ margin: 0, marginBottom: '0px', color: '#5C4033', fontSize: '14px', fontWeight: 600 }}>
+                                  {date}
+                                </p>
+                                <p style={{ margin: 0, color: '#52C41A', fontSize: '14px', fontWeight: 600 }}>
+                                  {formatted}
+                                </p>
+                              </div>
+                            )
+                          }
+                          return null
                         }}
-                        formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
                       />
                       <Area
                         type="monotone"
