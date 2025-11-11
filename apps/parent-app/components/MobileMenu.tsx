@@ -7,15 +7,17 @@ import { useCurrency } from '@/lib/context/CurrencyContext'
 import { uploadProfilePhoto } from '@/app/actions/profile'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { Gift } from 'lucide-react'
 
 interface MobileMenuProps {
   username?: string
   totalNetWorth: number
   profilePhotoUrl?: string | null
   buttonColor?: string
+  onSendGift?: () => void
 }
 
-export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl, buttonColor = '#FFA93D' }: MobileMenuProps) {
+export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl, buttonColor = '#FFA93D', onSendGift }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -192,6 +194,22 @@ export default function MobileMenu({ username, totalNetWorth, profilePhotoUrl, b
             </div>
             <span className="text-[18px] font-normal text-[#5C4033]">What I own</span>
           </Link>
+        </div>
+
+        {/* Send Gift Button */}
+        <div className="px-6 pt-6">
+          <button
+            onClick={() => {
+              onSendGift?.()
+              setIsOpen(false)
+            }}
+            className="w-full flex items-center gap-5 p-4 rounded-2xl bg-gradient-to-r from-[#FF4E8D] to-[#FF9966] hover:opacity-90 transition-opacity shadow-md"
+          >
+            <div className="w-10 h-10 bg-white/20 rounded-3xl flex items-center justify-center shrink-0">
+              <Gift className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-[18px] font-semibold text-white">Send Gift</span>
+          </button>
         </div>
 
         {/* Divider */}

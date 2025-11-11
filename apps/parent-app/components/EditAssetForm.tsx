@@ -97,9 +97,9 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
   }
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen pb-8" style={{ background: 'linear-gradient(180deg, #FF4E8D 0%, #FF9966 50%, #FFD93D 100%)' }}>
       {/* Header */}
-      <div className="px-6 pt-8 pb-6">
+      <div className="px-6 pt-8 pb-0">
         <PageHeader
           title="Edit Asset"
           buttonColor={pageStyles.dashboard.buttonColor}
@@ -114,8 +114,10 @@ export default function EditAssetForm({ asset }: EditAssetFormProps) {
             </HeaderButton>
           }
         />
+      </div>
 
-        {/* Instruction Card */}
+      {/* Instruction Card */}
+      <div className="px-6 pt-6 pb-6 relative z-10">
         <Card className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#00BCD4] to-[#0097A7] rounded-full mb-4 shadow-lg">
             <span className="text-4xl">✏️</span>

@@ -67,6 +67,7 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
 
   // Prepare asset breakdown for pie chart - assign unique color to each account
   const assetBreakdown = assets.map((asset, index) => ({
+    id: asset.id,
     name: asset.name,
     value: asset.current_value,
     type: asset.type,
@@ -468,7 +469,7 @@ export default function DashboardClient({ totalNetWorth, assets, snapshots, goal
                 {/* Legend */}
                 <div className="space-y-2">
                   {assetBreakdown.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between">
+                    <div key={item.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-[#5C4033]" style={{ fontSize: '14px', lineHeight: '20px' }}>{item.name}</span>

@@ -877,17 +877,17 @@ export default function AccountDetailsClient({ asset: initialAsset, assetHistory
 
       {/* Edit Account Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} loading={loading}>
-        {/* Delete button in top right */}
-        <button
-          onClick={handleDelete}
-          disabled={loading}
-          className="absolute top-6 right-6 p-2 text-[#8B7355] hover:text-[#5C4033] transition-colors disabled:opacity-50"
-          aria-label="Delete account"
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-
-        <h2 className="text-xl font-bold text-[#5C4033] text-center">Edit Account</h2>
+        {/* Header with trash icon */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-[#5C4033]">Edit Account</h2>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 active:scale-95 transition-all disabled:opacity-50"
+          >
+            <Trash2 className="w-5 h-5 text-[#FF6B6B]" />
+          </button>
+        </div>
 
         <div className="pb-3">
           <label className="block text-sm font-semibold text-[#5C4033] mb-2">Account Name</label>

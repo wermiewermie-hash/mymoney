@@ -15,23 +15,35 @@ export async function getGoogleStock() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
+    console.log('📊 getGoogleStock: No user')
     return null
   }
 
+  // Get ALL Google stock assets and order by most recent
   const { data, error } = await supabase
     .from('assets')
     .select('*')
     .eq('user_id', user.id)
     .eq('type', 'stock')
     .eq('ticker', 'GOOGL')
-    .maybeSingle()
+    .order('created_at', { ascending: false })
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error fetching Google stock:', error)
+  if (error) {
+    console.error('📊 getGoogleStock: Error fetching:', error)
     return null
   }
 
-  return data
+  if (!data || data.length === 0) {
+    console.log('📊 getGoogleStock: No assets found')
+    return null
+  }
+
+  // If there are multiple assets (duplicates), return the most recent one
+  const asset = data[0]
+  console.log('📊 getGoogleStock: Found', data.length, 'asset(s), returning most recent:',
+    `ID: ${asset.id}, Shares: ${asset.shares || 'undefined'}, Created: ${asset.created_at}`)
+
+  return asset
 }
 
 // Get cash asset for the current user
@@ -95,30 +107,41 @@ export async function getTotalNetWorth() {
 
 // Add or update Google stock (simplified for kids - whole numbers only)
 export async function upsertGoogleStock(shares: number) {
+  console.log('💰 upsertGoogleStock called with shares:', shares)
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
+    console.log('❌ upsertGoogleStock: No user')
     return { error: 'Not authenticated' }
   }
 
+  console.log('✅ upsertGoogleStock: User ID:', user.id)
+
   // Validate whole number
   if (!Number.isInteger(shares) || shares <= 0) {
+    console.log('❌ upsertGoogleStock: Invalid shares:', shares)
     return { error: 'Please enter a whole number of shares' }
   }
 
   // Get current Google stock price
   const stockPrice = await getStockPrice('GOOGL')
   if (!stockPrice) {
+    console.log('❌ upsertGoogleStock: Could not fetch stock price')
     return { error: 'Could not fetch Google stock price' }
   }
 
+  console.log('💵 Stock price:', stockPrice.price)
   const currentValue = shares * stockPrice.price
+  console.log('💰 Current value:', currentValue)
 
   // Check if Google stock already exists
   const existing = await getGoogleStock()
+  console.log('🔍 Existing Google stock:', existing ? `ID: ${existing.id}, Shares: ${existing.shares}` : 'null')
 
   if (existing) {
+    console.log('📝 Updating existing asset ID:', existing.id)
     // Update existing
     const { error } = await supabase
       .from('assets')
@@ -131,9 +154,12 @@ export async function upsertGoogleStock(shares: number) {
       .eq('id', existing.id)
 
     if (error) {
+      console.log('❌ Update error:', error)
       return { error: error.message }
     }
+    console.log('✅ Updated existing asset successfully')
   } else {
+    console.log('➕ Creating new asset')
     // Insert new with fixed defaults
     const { error } = await supabase
       .from('assets')
@@ -149,14 +175,18 @@ export async function upsertGoogleStock(shares: number) {
       })
 
     if (error) {
+      console.log('❌ Insert error:', error)
       return { error: error.message }
     }
+    console.log('✅ Created new asset successfully')
   }
 
   // Create snapshot after updating assets
+  console.log('📸 Creating snapshot...')
   await createSnapshot()
 
   revalidatePath('/dashboard')
+  console.log('✅ upsertGoogleStock complete')
   return { success: true }
 }
 

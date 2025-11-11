@@ -1,20 +1,23 @@
 'use client'
 
 import type { Asset } from '@/lib/types/database.types'
-import Link from 'next/link'
 import { deleteAsset } from '@/app/actions/assets'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import Modal from '@/components/Modal'
+import EditAssetModal from '@/components/EditAssetModal'
 
 interface AssetListProps {
   assets: Asset[]
 }
 
 export default function AssetList({ assets }: AssetListProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null)
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
 
   function handleDeleteClick(asset: Asset) {
     setAssetToDelete(asset)
@@ -57,14 +60,14 @@ export default function AssetList({ assets }: AssetListProps) {
                 <CurrencyDisplay amount={Number(asset.current_value)} />
               </p>
             </div>
-            <Link
-              href={`/dashboard/edit-asset/${asset.id}`}
+            <button
+              onClick={() => setEditingAsset(asset)}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-gray-50 active:scale-95 transition-all"
             >
               <svg className="w-4 h-4 text-[#5C4033]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-            </Link>
+            </button>
             <button
               onClick={() => handleDeleteClick(asset)}
               disabled={deletingId === asset.id}
@@ -117,6 +120,17 @@ export default function AssetList({ assets }: AssetListProps) {
           </button>
         </div>
       </Modal>
+
+      {/* Edit Asset Modal */}
+      <EditAssetModal
+        asset={editingAsset}
+        isOpen={!!editingAsset}
+        onClose={() => setEditingAsset(null)}
+        onSuccess={() => {
+          setEditingAsset(null)
+          router.refresh()
+        }}
+      />
     </div>
   )
 }

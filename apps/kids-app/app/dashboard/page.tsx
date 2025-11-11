@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getGoogleStock, getCash, getTotalNetWorth, getSnapshots } from '@/app/actions/kidsAssets'
 import { getGoals } from '@/app/actions/goals'
 import { getProfile } from '@/app/actions/profile'
+import { getPendingGifts } from '@/app/actions/gifts'
 import MobileMenu from '@/components/MobileMenu'
 import KidsDashboardClient from '@/components/KidsDashboardClient'
 import PageHeader from '@/components/PageHeader'
@@ -27,6 +28,7 @@ export default async function DashboardPage() {
   const totalNetWorth = await getTotalNetWorth()
   const snapshots = await getSnapshots()
   const goal = await getGoals()
+  const pendingGifts = await getPendingGifts()
 
   return (
     <div className="min-h-screen pb-8">
@@ -53,6 +55,7 @@ export default async function DashboardPage() {
         cash={cash}
         snapshots={snapshots}
         goal={goal}
+        pendingGifts={pendingGifts}
       />
     </div>
   )

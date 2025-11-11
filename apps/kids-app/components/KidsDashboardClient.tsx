@@ -15,6 +15,8 @@ import Modal from '@/components/Modal'
 import { deleteAsset } from '@/app/actions/assets'
 import { deleteGoal, updateGoal, createGoal } from '@/app/actions/goals'
 import { ConfettiEffect } from '@/components/ConfettiEffect'
+import GiftNotification from '@/components/GiftNotification'
+import type { StockGift } from '@/app/actions/gifts'
 
 interface Goal {
   id: string
@@ -50,11 +52,12 @@ interface KidsDashboardClientProps {
   cash: CashAsset | null
   snapshots: Snapshot[]
   goal: Goal | null
+  pendingGifts: StockGift[]
 }
 
 // Component to display animated net worth value
 function AnimatedNetWorth({ value, formatCurrency }: { value: any, formatCurrency: (n: number) => string }) {
-  const [displayValue, setDisplayValue] = useState(0)
+  const [displayValue, setDisplayValue] = useState(() => value.get())
 
   useEffect(() => {
     const unsubscribe = value.on('change', (latest: number) => {
@@ -70,9 +73,17 @@ function AnimatedNetWorth({ value, formatCurrency }: { value: any, formatCurrenc
   )
 }
 
-export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, snapshots, goal }: KidsDashboardClientProps) {
+export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, snapshots, goal, pendingGifts }: KidsDashboardClientProps) {
   const { formatCurrency } = useCurrency()
   const router = useRouter()
+  const [activeGiftId, setActiveGiftId] = useState<string | null>(null)
+
+  // Auto-open first gift modal on mount if there are pending gifts
+  useEffect(() => {
+    if (pendingGifts.length > 0 && !activeGiftId) {
+      setActiveGiftId(pendingGifts[0].id)
+    }
+  }, [pendingGifts, activeGiftId])
 
   // Calculate changes from snapshots
   const getChangeFromDate = (targetDate: Date) => {
@@ -442,6 +453,26 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
           }, 100)
         }}
       />
+
+      {/* Gift Notifications - Show as modal */}
+      {activeGiftId && pendingGifts.find(g => g.id === activeGiftId) && (
+        <GiftNotification
+          gift={pendingGifts.find(g => g.id === activeGiftId)!}
+          isOpen={true}
+          onClose={() => {
+            // Close current gift and open next one if available
+            const currentIndex = pendingGifts.findIndex(g => g.id === activeGiftId)
+            const nextGift = pendingGifts[currentIndex + 1]
+
+            if (nextGift) {
+              setActiveGiftId(nextGift.id)
+            } else {
+              setActiveGiftId(null)
+            }
+          }}
+        />
+      )}
+
       {/* Net Worth Card with animated sparkles */}
       <div className="px-6 pb-0">
         <div className="relative h-[240px] mb-4">

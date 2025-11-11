@@ -31,7 +31,7 @@ export function HeaderButton({ onClick, children, color, className = '' }: Heade
   return (
     <motion.button
       onClick={onClick}
-      className={`rounded-full text-white/80 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] size-[36px] p-0 flex items-center justify-center ${className}`}
+      className={`rounded-full text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] size-[36px] p-0 flex items-center justify-center ${className}`}
       style={{ backgroundColor: color }}
       whileHover={{ opacity: 0.9 }}
       whileTap={{ scale: 0.95 }}
