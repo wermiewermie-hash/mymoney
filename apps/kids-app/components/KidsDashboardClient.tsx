@@ -183,8 +183,7 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
   useEffect(() => {
     if (stockCardInView && googleStock && !hasAnimatedStockOnLoad) {
       setHasAnimatedStockOnLoad(true)
-      setCelebrateStock(true)
-      setTimeout(() => setCelebrateStock(false), 1400)
+      setCelebrateStock(prev => prev + 1)
     }
   }, [stockCardInView, googleStock, hasAnimatedStockOnLoad])
 
@@ -192,8 +191,7 @@ export default function KidsDashboardClient({ totalNetWorth, googleStock, cash, 
   useEffect(() => {
     if (cashCardInView && cash && !hasAnimatedCashOnLoad) {
       setHasAnimatedCashOnLoad(true)
-      setCelebrateCash(true)
-      setTimeout(() => setCelebrateCash(false), 1400)
+      setCelebrateCash(prev => prev + 1)
     }
   }, [cashCardInView, cash, hasAnimatedCashOnLoad])
 
